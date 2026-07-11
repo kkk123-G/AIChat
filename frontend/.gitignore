@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output and tool caches
+dist/
+dist-ssr/
+coverage/
+.vite/
+.eslintcache
+*.tsbuildinfo
+
+# Local environment files. Commit only documented templates.
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor and operating-system files
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

@@ -1,0 +1,40 @@
+# Maven build output
+target/
+
+# Local Spring configuration. Commit only shared defaults and templates.
+src/main/resources/application-local.properties
+src/main/resources/application-local.yml
+src/main/resources/application-local.yaml
+src/main/resources/application-dev.properties
+src/main/resources/application-dev.yml
+src/main/resources/application-dev.yaml
+src/main/resources/application-prod.properties
+src/main/resources/application-prod.yml
+src/main/resources/application-prod.yaml
+src/main/resources/application-*.local.properties
+src/main/resources/application-*.local.yml
+src/main/resources/application-*.local.yaml
+
+# Local environment files. Commit only documented templates.
+.env
+.env.*
+!.env.example
+
+# Logs and runtime data
+logs/
+*.log
+*.pid
+*.h2.db
+*.mv.db
+
+# IDE and operating-system files
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.factorypath
+.DS_Store
+Thumbs.db
