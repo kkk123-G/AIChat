@@ -1,13 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { authApi } from '@/utils/api'
+import { clearAccessToken } from '@/utils/auth'
 
 const prompt = ref('')
+const router = useRouter()
+
+async function handleLogout() {
+  await authApi.logout()
+  clearAccessToken()
+  ElMessage.success('已退出登录')
+  await router.replace({ name: 'login' })
+}
 </script>
 
 <template>
   <main class="chat-page">
     <header class="chat-header">
       <strong>AI Chat</strong>
+      <el-button text @click="handleLogout">退出登录</el-button>
     </header>
     <section class="message-list" aria-label="对话消息">
       <el-empty description="开始一段新的对话" />
