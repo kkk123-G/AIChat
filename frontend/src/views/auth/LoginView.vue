@@ -40,7 +40,8 @@ import { onMounted, ref, reactive } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '@/utils/api'
-import { setAccessToken } from '@/utils/auth'
+import { defaultDashboardRouteName } from '@/utils/authorization'
+import { clearAccessToken, setAccessToken } from '@/utils/auth'
 import logoUrl from '@/assets/logo.png'
 
 // 表单数据定义
@@ -90,9 +91,15 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
       deviceId: navigator.userAgent,
     })
     setAccessToken(tokenData.accessToken)
+    let currentUser
+    try {
+      currentUser = await authApi.currentUser()
+    } catch (error) {
+      clearAccessToken()
+      throw error
+    }
     ElMessage.success('登录成功')
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/chat'
-    await router.replace(redirect)
+    await router.replace({ name: defaultDashboardRouteName(currentUser.menuCodes) })
   } finally {
     loading.value = false
   }

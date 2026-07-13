@@ -18,9 +18,11 @@ import xyz.qvtrmx.ai.auth.dto.LoginRequest;
 import xyz.qvtrmx.ai.auth.dto.RefreshTokenRequest;
 import xyz.qvtrmx.ai.auth.dto.RegisterRequest;
 import xyz.qvtrmx.ai.auth.service.AuthService;
+import xyz.qvtrmx.ai.auth.vo.CurrentUserResponse;
 import xyz.qvtrmx.ai.auth.vo.TokenResponse;
 import xyz.qvtrmx.ai.common.api.ApiResponse;
 import xyz.qvtrmx.ai.security.model.AuthenticatedUser;
+import xyz.qvtrmx.ai.security.service.MenuPermissionService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,10 +30,16 @@ public class AuthController {
 
     private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
     private final AuthService authService;
+    private final MenuPermissionService menuPermissionService;
     private final boolean refreshCookieSecure;
 
-    public AuthController(AuthService authService, @Value("${app.auth.refresh-cookie-secure}") boolean refreshCookieSecure) {
+    public AuthController(
+            AuthService authService,
+            MenuPermissionService menuPermissionService,
+            @Value("${app.auth.refresh-cookie-secure}") boolean refreshCookieSecure
+    ) {
         this.authService = authService;
+        this.menuPermissionService = menuPermissionService;
         this.refreshCookieSecure = refreshCookieSecure;
     }
 
@@ -69,8 +77,13 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ApiResponse<AuthenticatedUser> me(@AuthenticationPrincipal AuthenticatedUser user) {
-        return ApiResponse.ok(user);
+    public ApiResponse<CurrentUserResponse> me(@AuthenticationPrincipal AuthenticatedUser user) {
+        return ApiResponse.ok(new CurrentUserResponse(
+                user.id(),
+                user.username(),
+                user.role(),
+                menuPermissionService.accessibleMenuCodes(user)
+        ));
     }
 
     private ResponseEntity<ApiResponse<TokenResponse>> withRefreshCookie(AuthService.AuthTokens tokens) {

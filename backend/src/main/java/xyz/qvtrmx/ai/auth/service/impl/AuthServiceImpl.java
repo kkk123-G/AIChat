@@ -3,6 +3,7 @@ package xyz.qvtrmx.ai.auth.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -27,13 +28,14 @@ import xyz.qvtrmx.ai.auth.vo.TokenResponse;
 import xyz.qvtrmx.ai.common.exception.BusinessException;
 import xyz.qvtrmx.ai.security.jwt.JwtService;
 import xyz.qvtrmx.ai.security.model.AuthenticatedUser;
+import xyz.qvtrmx.ai.security.model.UserRole;
 import xyz.qvtrmx.ai.user.entity.User;
 import xyz.qvtrmx.ai.user.mapper.UserMapper;
 
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private static final int USER_ROLE = 0;
+    private static final int USER_ROLE = UserRole.USER.code();
     private static final int ENABLED_STATUS = 1;
     private static final String REGISTER_LIMIT_PREFIX = "auth:register:ip:";
     private static final String REFRESH_TOKEN_PREFIX = "auth:refresh:";
@@ -80,6 +82,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(request.username());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setNickname(request.nickname());
+        user.setBalance(BigDecimal.ZERO);
         user.setRole(USER_ROLE);
         user.setStatus(ENABLED_STATUS);
         user.setVersion(0);
@@ -101,7 +104,10 @@ public class AuthServiceImpl implements AuthService {
         if (user.getStatus() != ENABLED_STATUS) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "Account is disabled");
         }
-        user.setLastLoginAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        user.setLastLoginAt(now);
+        user.setLastActiveAt(now);
+        user.setLastUsedAt(now);
         userMapper.updateById(user);
         return issueTokens(user, request.deviceId(), httpRequest);
     }

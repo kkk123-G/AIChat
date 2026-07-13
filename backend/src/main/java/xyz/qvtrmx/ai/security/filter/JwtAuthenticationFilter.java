@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import xyz.qvtrmx.ai.security.jwt.JwtService;
 import xyz.qvtrmx.ai.security.model.AuthenticatedUser;
+import xyz.qvtrmx.ai.security.model.UserRole;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -37,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         user,
                         null,
-                        List.of(new SimpleGrantedAuthority(user.role() == 1 ? "ROLE_ADMIN" : "ROLE_USER"))
+                        List.of(new SimpleGrantedAuthority(UserRole.fromCode(user.role()).authority()))
                 );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
