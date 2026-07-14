@@ -13,7 +13,7 @@ import xyz.qvtrmx.ai.chat.mapper.ConversationMapper;
 @Service
 public class ChatTitleService {
 
-    private static final String NEW_CONVERSATION_TITLE = "New conversation";
+    private static final String NEW_CONVERSATION_TITLE = "新对话";
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatTitleService.class);
     private final OpenAiResponsesClient responsesClient;
     private final ConversationMapper conversationMapper;

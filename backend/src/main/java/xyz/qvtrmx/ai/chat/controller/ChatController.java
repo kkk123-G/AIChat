@@ -44,6 +44,14 @@ public class ChatController {
         return ApiResponse.ok(chatService.listConversations(user, keyword));
     }
 
+    @GetMapping("/search")
+    public ApiResponse<List<ConversationResponse>> searchConversations(
+            @RequestParam String keyword,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        return ApiResponse.ok(chatService.searchConversations(user, keyword));
+    }
+
     @GetMapping("/{conversationId}/messages")
     public ApiResponse<List<ChatMessageResponse>> listMessages(
             @PathVariable Long conversationId,

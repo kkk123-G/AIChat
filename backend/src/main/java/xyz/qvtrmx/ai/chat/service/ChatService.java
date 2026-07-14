@@ -30,7 +30,7 @@ import xyz.qvtrmx.ai.user.service.UserBalanceService;
 public class ChatService {
 
     private static final int ACTIVE_STATUS = 1;
-    private static final String NEW_CONVERSATION_TITLE = "New conversation";
+    private static final String NEW_CONVERSATION_TITLE = "新对话";
     private static final int CONTEXT_MESSAGE_LIMIT = 20;
 
     private final ConversationMapper conversationMapper;
@@ -74,6 +74,10 @@ public class ChatService {
         return conversationMapper.searchByUser(user.id(), normalizedKeyword, 100).stream()
                 .map(this::toConversationResponse)
                 .toList();
+    }
+
+    public List<ConversationResponse> searchConversations(AuthenticatedUser user, String keyword) {
+        return listConversations(user, keyword);
     }
 
     public List<ChatMessageResponse> listMessages(Long conversationId, AuthenticatedUser user) {

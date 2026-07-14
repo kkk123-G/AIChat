@@ -108,7 +108,9 @@ export const userAccountApi = {
 
 export const chatApi = {
   createConversation: () => request.post<Conversation>('/chat/conversations'),
-  listConversations: (keyword?: string) => request.get<Conversation[]>('/chat/conversations', { params: { keyword } }),
+  listConversations: () => request.get<Conversation[]>('/chat/conversations'),
+  searchConversations: (keyword: string) =>
+    request.get<Conversation[]>('/chat/conversations/search', { params: { keyword } }),
   listMessages: (conversationId: string) => request.get<ChatMessage[]>(`/chat/conversations/${conversationId}/messages`),
   deleteConversation: (conversationId: string) => request.delete<void>(`/chat/conversations/${conversationId}`),
   streamMessage: (

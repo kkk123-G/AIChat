@@ -4,13 +4,17 @@
 
     <aside class="sidebar" :class="{ 'is-mobile-open': isMobileSidebarOpen }">
       <div class="sidebar-header">
-        <el-button class="new-chat-btn" plain :loading="creatingConversation" @click="handleNewChat">
-          <el-icon><Plus /></el-icon>
-          新聊天
-        </el-button>
-        <el-input v-model="searchQuery" placeholder="搜索聊天记录" clearable class="search-input">
-          <template #prefix><el-icon><Search /></el-icon></template>
-        </el-input>
+        <div class="sidebar-actions">
+          <el-button class="new-chat-btn" plain :disabled="isGenerating" @click="handleNewChat">
+            <el-icon><Plus /></el-icon>
+            新对话
+          </el-button>
+          <el-tooltip content="搜索聊天记录" placement="bottom">
+            <el-button class="search-trigger" text circle aria-label="搜索聊天记录" @click="openSearchDialog">
+              <el-icon><Search /></el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
       </div>
 
       <nav v-loading="loadingConversations" class="session-list">
@@ -41,18 +45,56 @@
       </nav>
     </aside>
 
-    <section class="chat-container">
+    <el-dialog v-model="searchDialogVisible" title="搜索聊天记录" width="560px" class="search-dialog" @closed="resetSearch">
+      <el-input
+        ref="searchInputRef"
+        v-model="searchKeyword"
+        placeholder="搜索会话标题或消息内容"
+        clearable
+        class="search-dialog-input"
+        @input="scheduleSearch"
+        @keyup.enter="searchConversations"
+      >
+        <template #append>
+          <el-button :loading="searching" aria-label="搜索" @click="searchConversations">
+            <el-icon><Search /></el-icon>
+          </el-button>
+        </template>
+      </el-input>
+
+      <div v-loading="searching" class="search-result-list">
+        <button
+          v-for="conversation in searchResults"
+          :key="conversation.id"
+          class="search-result-item"
+          :disabled="isGenerating"
+          @click="selectSearchResult(conversation)"
+        >
+          <span class="search-result-title">{{ conversation.title }}</span>
+          <span class="search-result-time">{{ formatConversationTime(conversation.lastMessageAt || conversation.createdAt) }}</span>
+        </button>
+        <el-empty
+          v-if="searchKeyword.trim() && !searching && searchResults.length === 0"
+          :image-size="72"
+          description="未找到匹配的聊天记录"
+        />
+      </div>
+    </el-dialog>
+
+    <section class="chat-container" :class="{ 'is-draft': isDraftConversation }">
       <header class="chat-header">
         <el-button class="menu-toggle-btn" text circle aria-label="打开聊天列表" @click="isMobileSidebarOpen = true">
           <el-icon><Expand /></el-icon>
         </el-button>
-        <h1 class="title">{{ activeSession?.title || '智能对话' }}</h1>
+        <h1 class="title">{{ activeSession?.title || '新对话' }}</h1>
       </header>
 
+      <p v-if="isDraftConversation" class="new-chat-placeholder">开始一段新的对话</p>
+
       <main ref="chatMainRef" v-loading="loadingMessages" class="chat-main">
-        <el-empty v-if="activeSession && !loadingMessages && activeSession.messages.length === 0" description="开始一段新的对话" />
+        <el-empty v-if="activeSession && !loadingMessages && displayedMessages.length === 0" description="暂无聊天消息" />
         <article
-          v-for="message in activeSession?.messages"
+          v-for="message in displayedMessages"
           :key="message.id"
           class="message-row"
           :class="`is-${message.role}`"
@@ -66,16 +108,17 @@
         <div ref="scrollAnchor" />
       </main>
 
-      <footer class="chat-footer">
+      <footer class="chat-footer" :class="{ 'is-draft': isDraftConversation }">
         <div class="input-wrapper">
           <el-input
+            ref="chatInputRef"
             v-model="inputText"
             type="textarea"
             :autosize="{ minRows: 1, maxRows: 6 }"
             resize="none"
             placeholder="输入消息，Enter 发送，Shift + Enter 换行"
             class="chat-input"
-            :disabled="!activeSession || isGenerating"
+            :disabled="isGenerating"
             @keydown.enter.exact.prevent="handleSend"
           />
           <el-button
@@ -84,7 +127,7 @@
             circle
             class="send-btn"
             aria-label="发送消息"
-            :disabled="!inputText.trim() || !activeSession"
+            :disabled="!inputText.trim()"
             @click="handleSend"
           >
             <el-icon><Promotion /></el-icon>
@@ -99,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Expand, Plus, Promotion, Search, VideoPause } from '@element-plus/icons-vue'
 import DOMPurify from 'dompurify'
@@ -112,34 +155,37 @@ interface ChatSession extends Conversation {
 }
 
 const inputText = ref('')
-const searchQuery = ref('')
 const sessions = ref<ChatSession[]>([])
+const draftMessages = ref<ChatMessage[]>([])
 const activeSessionId = ref<string | null>(null)
 const isGenerating = ref(false)
 const isMobileSidebarOpen = ref(false)
 const loadingConversations = ref(false)
 const loadingMessages = ref(false)
-const creatingConversation = ref(false)
 const deletingSessionId = ref<string | null>(null)
+const searchDialogVisible = ref(false)
+const searchKeyword = ref('')
+const searchResults = ref<Conversation[]>([])
+const searching = ref(false)
 const chatMainRef = ref<HTMLElement | null>(null)
+const chatInputRef = ref<{ focus: () => void } | null>(null)
+const searchInputRef = ref<{ focus: () => void } | null>(null)
 const scrollAnchor = ref<HTMLElement | null>(null)
 const accountStore = useAccountStore()
 
 let searchTimer: ReturnType<typeof window.setTimeout> | undefined
+let latestSearchRequestId = 0
 let streamAbortController: AbortController | undefined
 let titleRefreshTimers: ReturnType<typeof window.setTimeout>[] = []
 
 const activeSession = computed(() => sessions.value.find((session) => session.id === activeSessionId.value))
-
-watch(searchQuery, () => {
-  if (searchTimer) window.clearTimeout(searchTimer)
-  searchTimer = window.setTimeout(() => void loadConversations(), 250)
-})
+const displayedMessages = computed(() => activeSession.value?.messages ?? draftMessages.value)
+const isDraftConversation = computed(() => !activeSession.value && displayedMessages.value.length === 0)
 
 async function loadConversations(selectFirst = false) {
   loadingConversations.value = true
   try {
-    const conversations = await chatApi.listConversations(searchQuery.value.trim() || undefined)
+    const conversations = await chatApi.listConversations()
     const existingMessages = new Map(sessions.value.map((session) => [session.id, session.messages]))
     sessions.value = conversations.map((conversation) => ({
       ...conversation,
@@ -157,6 +203,7 @@ async function loadConversations(selectFirst = false) {
 async function selectSession(id: string) {
   if (id === activeSessionId.value || isGenerating.value) return
   activeSessionId.value = id
+  draftMessages.value = []
   isMobileSidebarOpen.value = false
   const session = sessions.value.find((item) => item.id === id)
   if (!session) return
@@ -171,17 +218,71 @@ async function selectSession(id: string) {
 }
 
 async function handleNewChat() {
-  if (isGenerating.value || creatingConversation.value) return
-  creatingConversation.value = true
-  try {
-    const conversation = await chatApi.createConversation()
-    sessions.value.unshift({ ...conversation, messages: [] })
-    activeSessionId.value = conversation.id
-    isMobileSidebarOpen.value = false
-    await scrollToBottom(false)
-  } finally {
-    creatingConversation.value = false
+  if (isGenerating.value) return
+  activeSessionId.value = null
+  draftMessages.value = []
+  isMobileSidebarOpen.value = false
+  await scrollToBottom(false)
+  await focusChatInput()
+}
+
+async function openSearchDialog() {
+  searchDialogVisible.value = true
+  await nextTick()
+  searchInputRef.value?.focus()
+}
+
+function scheduleSearch() {
+  if (searchTimer) window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => void searchConversations(), 250)
+}
+
+async function searchConversations() {
+  const keyword = searchKeyword.value.trim()
+  const requestId = ++latestSearchRequestId
+  if (!keyword) {
+    searchResults.value = []
+    searching.value = false
+    return
   }
+
+  searching.value = true
+  try {
+    const results = await chatApi.searchConversations(keyword)
+    if (requestId === latestSearchRequestId) {
+      searchResults.value = results
+    }
+  } finally {
+    if (requestId === latestSearchRequestId) {
+      searching.value = false
+    }
+  }
+}
+
+async function selectSearchResult(conversation: Conversation) {
+  if (isGenerating.value) return
+  if (!sessions.value.some((session) => session.id === conversation.id)) {
+    sessions.value.unshift({ ...conversation, messages: [] })
+  }
+  searchDialogVisible.value = false
+  await selectSession(conversation.id)
+}
+
+function resetSearch() {
+  if (searchTimer) window.clearTimeout(searchTimer)
+  latestSearchRequestId += 1
+  searchKeyword.value = ''
+  searchResults.value = []
+  searching.value = false
+}
+
+function formatConversationTime(value: string) {
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
 }
 
 async function deleteSession(id: string) {
@@ -208,6 +309,8 @@ async function deleteSession(id: string) {
       const nextSession = sessions.value[index] || sessions.value[index - 1]
       if (nextSession) {
         await selectSession(nextSession.id)
+      } else {
+        await handleNewChat()
       }
     }
     ElMessage.success('会话已删除')
@@ -219,7 +322,7 @@ async function deleteSession(id: string) {
 async function handleSend() {
   const content = inputText.value.trim()
   const session = activeSession.value
-  if (!content || !session || isGenerating.value) return
+  if (!content || isGenerating.value) return
 
   const userMessage: ChatMessage = {
     id: `temporary-user-${Date.now()}`,
@@ -233,19 +336,32 @@ async function handleSend() {
     content: '',
     createdAt: new Date().toISOString(),
   }
-  const conversationId = session.id
-  session.messages.push(userMessage, assistantMessage)
-  inputText.value = ''
   isGenerating.value = true
   const controller = new AbortController()
   streamAbortController = controller
-  await scrollToBottom()
+  let createdConversation: Conversation | null = null
+  let messageList = session?.messages ?? draftMessages.value
+  let messagesAdded = false
 
   try {
+    if (!session) {
+      createdConversation = await chatApi.createConversation()
+    }
+    const conversationId = createdConversation?.id ?? session?.id
+    if (!conversationId) throw new Error('Unable to create a conversation')
+
+    messageList.push(userMessage, assistantMessage)
+    messagesAdded = true
+    inputText.value = ''
+    await scrollToBottom()
+
     await chatApi.streamMessage(conversationId, content, controller.signal, (event) => {
-      if (activeSessionId.value !== conversationId) return
+      if (session && activeSessionId.value !== conversationId) return
       if (event.type === 'delta' && event.delta) {
         assistantMessage.content += event.delta
+        if (createdConversation) {
+          promoteCreatedConversation(createdConversation, messageList)
+        }
         void scrollToBottom()
       }
       if (event.type === 'done') {
@@ -253,6 +369,9 @@ async function handleSend() {
           assistantMessage.id = event.message.id
           assistantMessage.content = event.message.content
           assistantMessage.createdAt = event.message.createdAt
+          if (createdConversation) {
+            promoteCreatedConversation(createdConversation, messageList)
+          }
           scheduleTitleRefresh()
         }
         finishGeneration(controller)
@@ -266,8 +385,16 @@ async function handleSend() {
       const message = error instanceof Error ? error.message : 'AI response failed'
       ElMessage.error(message)
     }
-    if (!assistantMessage.content) {
-      session.messages = session.messages.filter((message) => message !== assistantMessage)
+    if (messagesAdded && !assistantMessage.content) {
+      messageList = messageList.filter((message) => message !== userMessage && message !== assistantMessage)
+      if (session) {
+        session.messages = messageList
+      } else {
+        draftMessages.value = messageList
+      }
+      if (createdConversation && activeSessionId.value !== createdConversation.id) {
+        await chatApi.deleteConversation(createdConversation.id)
+      }
     }
   } finally {
     if (streamAbortController === controller) {
@@ -276,6 +403,13 @@ async function handleSend() {
     }
     void accountStore.refreshBalance()
   }
+}
+
+function promoteCreatedConversation(conversation: Conversation, messages: ChatMessage[]) {
+  if (activeSessionId.value === conversation.id) return
+  sessions.value.unshift({ ...conversation, messages })
+  activeSessionId.value = conversation.id
+  draftMessages.value = []
 }
 
 function scheduleTitleRefresh() {
@@ -304,9 +438,21 @@ async function scrollToBottom(smooth = true) {
   scrollAnchor.value?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'end' })
 }
 
+async function focusChatInput() {
+  await nextTick()
+  chatInputRef.value?.focus()
+}
+
 onMounted(() => {
-  void loadConversations(true)
+  void initializeChat()
 })
+
+async function initializeChat() {
+  await loadConversations(true)
+  if (sessions.value.length === 0 && !activeSessionId.value) {
+    await handleNewChat()
+  }
+}
 
 onBeforeUnmount(() => {
   if (searchTimer) window.clearTimeout(searchTimer)
@@ -339,27 +485,36 @@ $accent: #0d9488;
   flex: 0 0 280px;
   flex-direction: column;
   border-right: 1px solid $border-color;
-  background: $surface-color;
+  background: #ffffff;
   z-index: 2;
 }
 
 .sidebar-header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   padding: 16px;
-  border-bottom: 1px solid $border-color;
+}
+
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .new-chat-btn {
-  justify-content: flex-start;
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
   height: 38px;
+  border-radius: 12px;
   border-color: #99f6e4;
   color: #0f766e;
 }
 
-.search-input :deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px $border-color inset;
+.search-trigger {
+  width: 38px;
+  height: 38px;
+  border: 1px solid $border-color;
+  color: $text-regular;
 }
 
 .session-list {
@@ -439,19 +594,66 @@ $accent: #0d9488;
   white-space: nowrap;
 }
 
+.search-result-list {
+  min-height: 160px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-top: 12px;
+}
+
+:global(.search-dialog) {
+  max-width: calc(100% - 32px);
+}
+
+.search-result-item {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 4px;
+  border: 0;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 12px 4px;
+  background: transparent;
+  color: $text-primary;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    background: #f8fafc;
+  }
+
+  &:disabled {
+    cursor: wait;
+  }
+}
+
+.search-result-title {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result-time {
+  color: $text-secondary;
+  font-size: 12px;
+}
+
 .chat-container {
   display: flex;
+  position: relative;
   min-width: 0;
   flex: 1;
   flex-direction: column;
+  background: $surface-color;
 }
 
 .chat-header {
   display: flex;
-  min-height: 60px;
+  min-height: 70px;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px solid $border-color;
   padding: 0 24px;
   background: $surface-color;
 }
@@ -468,6 +670,14 @@ $accent: #0d9488;
 
 .menu-toggle-btn {
   display: none;
+  -webkit-tap-highlight-color: transparent;
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    background: transparent !important;
+    box-shadow: none;
+  }
 }
 
 .chat-main {
@@ -475,6 +685,20 @@ $accent: #0d9488;
   flex: 1;
   overflow-y: auto;
   padding: 28px clamp(16px, 5vw, 72px);
+  background: $surface-color;
+}
+
+.new-chat-placeholder {
+  position: absolute;
+  top: calc(54% - 44px);
+  right: 0;
+  left: 0;
+  margin: 0;
+  color: #111827;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
 }
 
 .message-row {
@@ -572,7 +796,20 @@ $accent: #0d9488;
 
 .chat-footer {
   padding: 16px clamp(16px, 5vw, 72px) 24px;
-  background: $bg-color;
+  background: $surface-color;
+}
+
+.chat-footer.is-draft {
+  position: absolute;
+  top: 54%;
+  right: 0;
+  left: 0;
+  padding: 0 clamp(16px, 5vw, 72px);
+  background: transparent;
+}
+
+.chat-footer.is-draft .input-wrapper {
+  max-width: 760px;
 }
 
 .input-wrapper {

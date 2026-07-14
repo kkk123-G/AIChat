@@ -645,6 +645,14 @@ $navbar-height: 60px;
       cursor: pointer;
       margin-right: 16px;
       color: #64748b;
+      outline: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+
+      &:focus,
+      &:focus-visible {
+        outline: none;
+      }
     }
 
     .breadcrumb-title {
