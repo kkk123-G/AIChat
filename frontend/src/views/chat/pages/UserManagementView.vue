@@ -3,7 +3,8 @@
     <section class="toolbar-section">
       <div class="top-bar">
         <div class="search-wrapper">
-          <el-input v-model="searchQuery" placeholder="账号名" clearable class="search-input" @clear="handleSearch" @keyup.enter="handleSearch">
+          <el-input v-model="searchQuery" placeholder="账号名" clearable class="search-input" @clear="handleSearch"
+            @keyup.enter="handleSearch">
             <template #prefix>
               <el-icon>
                 <Search />
@@ -46,8 +47,10 @@
 
           <el-table-column label="余额" width="140">
             <template #default="scope">
-              <span class="balance-text">￥{{ scope.row.balance }}</span>
-              <span class="balance-type">充值</span>
+              <div class="balance-cell">
+                <span class="balance-text">￥{{ scope.row.balance }}</span>
+                <button type="button" class="balance-type recharge-button" @click="openRechargeDialog(scope.row)">充值</button>
+              </div>
             </template>
           </el-table-column>
 
@@ -73,15 +76,21 @@
             <template #default="scope">
               <div class="opera-actions">
                 <el-link type="primary" :underlined="false">
-                  <el-icon><EditPen /></el-icon>
+                  <el-icon>
+                    <EditPen />
+                  </el-icon>
                   编辑
                 </el-link>
                 <el-link v-if="scope.row.id !== '1'" type="danger" :underlined="false">
-                  <el-icon><CircleClose /></el-icon>
+                  <el-icon>
+                    <CircleClose />
+                  </el-icon>
                   禁用
                 </el-link>
                 <el-link type="info" :underlined="false">
-                  <el-icon><MoreFilled /></el-icon>
+                  <el-icon>
+                    <MoreFilled />
+                  </el-icon>
                   更多
                 </el-link>
               </div>
@@ -104,9 +113,9 @@
           <div class="card-body">
             <div class="info-row">
               <span class="label">余额:</span>
-              <span>
+              <span class="balance-cell">
                 <span class="balance-text">￥{{ item.balance }}</span>
-                <span class="balance-type">充值</span>
+                <button type="button" class="balance-type recharge-button" @click="openRechargeDialog(item)">充值</button>
               </span>
             </div>
             <div class="info-row">
@@ -127,9 +136,15 @@
             </div>
           </div>
           <div class="card-footer">
-            <el-button link type="primary"><el-icon><EditPen /></el-icon>编辑</el-button>
-            <el-button v-if="item.id !== '1'" link type="danger"><el-icon><CircleClose /></el-icon>禁用</el-button>
-            <el-button link type="info"><el-icon><MoreFilled /></el-icon>更多</el-button>
+            <el-button link type="primary"><el-icon>
+                <EditPen />
+              </el-icon>编辑</el-button>
+            <el-button v-if="item.id !== '1'" link type="danger"><el-icon>
+                <CircleClose />
+              </el-icon>禁用</el-button>
+            <el-button link type="info"><el-icon>
+                <MoreFilled />
+              </el-icon>更多</el-button>
           </div>
         </div>
       </div>
@@ -140,22 +155,54 @@
         <div class="total-text hidden-xs-only">
           显示 {{ pageStart }} 至 {{ pageEnd }} 共 {{ total }} 条结果 每页: {{ pageSize }}
         </div>
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
-          layout="prev, pager, next, sizes"
-          :total="total"
-          @current-change="handleCurrentChange"
-          @size-change="handleSizeChange"
-        />
+        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+          layout="prev, pager, next, sizes" :total="total" @current-change="handleCurrentChange"
+          @size-change="handleSizeChange" />
       </div>
     </section>
   </div>
+
+  <el-dialog v-model="rechargeDialogVisible" title="充值" width="384px" class="recharge-custom-dialog" align-center
+    @closed="resetRechargeForm">
+    <div class="recharge-content">
+      <div class="user-info-card">
+        <el-avatar :size="42" class="user-avatar">
+          {{ currentRechargeUser?.account?.charAt(0).toUpperCase() || 'U' }}
+        </el-avatar>
+        <div class="info-text">
+          <div class="account">{{ currentRechargeUser?.account || '未知账户' }}</div>
+          <div class="balance">当前余额: ￥{{ currentRechargeUser?.balance || '0.00' }}</div>
+        </div>
+      </div>
+
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item label="充值金额">
+          <el-input v-model="rechargeForm.amount" placeholder="0" inputmode="decimal" class="custom-input"
+            @input="sanitizeRechargeAmount">
+            <template #prefix><span class="currency-prefix">￥</span></template>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item label="备注">
+          <el-input v-model="rechargeForm.remark" type="textarea" :rows="3" resize="none" maxlength="200"
+            class="custom-textarea" />
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button class="btn-cancel" @click="rechargeDialogVisible = false">取消</el-button>
+        <el-button class="btn-confirm" type="primary" :loading="rechargeSubmitting"
+          @click="submitRecharge">确认</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { CircleClose, EditPen, MoreFilled, Refresh, Search } from '@element-plus/icons-vue'
 import { adminUserApi, type AdminUser } from '@/utils/api'
 
@@ -237,6 +284,60 @@ function formatDateTime(value: string | null) {
 onMounted(() => {
   void loadUsers()
 })
+
+// 充值弹窗逻辑
+const rechargeDialogVisible = ref(false)
+const currentRechargeUser = ref<UserItem | null>(null)
+const rechargeSubmitting = ref(false)
+
+const rechargeForm = reactive({
+  amount: '',
+  remark: ''
+})
+
+// 打开弹窗并回显数据
+function openRechargeDialog(user: UserItem) {
+  currentRechargeUser.value = user
+  resetRechargeForm()
+  rechargeDialogVisible.value = true
+}
+
+function sanitizeRechargeAmount(value: string) {
+  const normalized = value.replace(/[^\d.]/g, '')
+  const [integerPart = '', ...decimalParts] = normalized.split('.')
+  const decimalPart = decimalParts.join('').slice(0, 2)
+  const integer = integerPart || (normalized.startsWith('.') ? '0' : '')
+  rechargeForm.amount = decimalParts.length > 0 ? `${integer}.${decimalPart}` : integer
+}
+
+function resetRechargeForm() {
+  rechargeForm.amount = ''
+  rechargeForm.remark = ''
+}
+
+async function submitRecharge() {
+  const user = currentRechargeUser.value
+  const amount = rechargeForm.amount
+  if (!user || rechargeSubmitting.value) return
+  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) {
+    ElMessage.warning('请输入大于 0 的有效充值金额')
+    return
+  }
+
+  rechargeSubmitting.value = true
+  try {
+    const result = await adminUserApi.recharge(user.id, {
+      amount,
+      remark: rechargeForm.remark.trim() || undefined,
+    })
+    user.balance = Number(result.balance).toFixed(2)
+    ElMessage.success('充值成功')
+    rechargeDialogVisible.value = false
+    await loadUsers()
+  } finally {
+    rechargeSubmitting.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -377,9 +478,10 @@ $border-color: #f0f2f5;
   // 角色和状态标签还原
   .role-tag {
     display: inline-block;
-    padding: 2px 8px;
+    padding: 1px 6px;
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1.4;
 
     &.user {
       background-color: #f4f4f5;
@@ -394,15 +496,33 @@ $border-color: #f0f2f5;
 
   .balance-text {
     font-weight: 600;
-    margin-right: 4px;
+    line-height: 1;
+  }
+
+  .balance-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
   }
 
   .balance-type {
     font-size: 11px;
+    line-height: 1.2;
     padding: 1px 4px;
     border-radius: 3px;
     color: #10b981;
     background-color: #ecfdf5;
+  }
+
+  .recharge-button {
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+
+    &:hover {
+      background-color: #d1fae5;
+    }
   }
 
   .status-cell {
@@ -546,6 +666,206 @@ $border-color: #f0f2f5;
 @media (min-width: 769px) {
   .hidden-sm-and-up {
     display: none !important;
+  }
+}
+</style>
+
+
+<style lang="scss">
+/* --- 将弹窗样式提取为非 scoped，解决 el-dialog 挂载在 body 导致样式失效的问题 --- */
+.recharge-custom-dialog {
+  border-radius: 16px !important;
+  /* 匹配图二的大圆角 */
+  overflow: hidden;
+
+  /* 弹窗头部 */
+  .el-dialog__header {
+    padding: 18px 24px 16px;
+    margin-right: 0;
+    border-bottom: 1px solid #f0f2f5;
+
+    .el-dialog__title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .el-dialog__headerbtn {
+      top: 18px;
+      right: 20px;
+      font-size: 18px;
+    }
+  }
+
+  /* 弹窗内容区 */
+  .el-dialog__body {
+    padding: 16px 24px 18px;
+  }
+
+  /* 用户信息卡片 (匹配图二浅色背景与横向布局) */
+  .user-info-card {
+    display: flex;
+    align-items: center;
+    background-color: #f8fafc;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+
+    .user-avatar {
+      background-color: #cffff4;
+      /* 浅薄荷绿背景 */
+      color: #006856;
+      /* 深绿色文字 */
+      font-size: 18px;
+      font-weight: 600;
+      margin-right: 12px;
+    }
+
+    .info-text {
+      .account {
+        font-size: 16px;
+        color: #1a1a1a;
+        font-weight: 500;
+        margin-bottom: 2px;
+      }
+
+      .balance {
+        font-size: 13px;
+        color: #6b7280;
+      }
+    }
+  }
+
+  /* 表单样式 (匹配图二的大圆角输入框) */
+  .el-form-item {
+    margin-bottom: 16px;
+
+    .el-form-item__label {
+      font-size: 14px;
+      color: #374151;
+      padding-bottom: 6px;
+    }
+  }
+
+  .custom-input,
+  .custom-textarea {
+
+    .el-input__wrapper,
+    .el-textarea__inner {
+      box-shadow: 0 0 0 1px #e5e7eb inset !important;
+      border-radius: 12px !important;
+      background-color: #ffffff;
+
+      &:hover,
+      &.is-focus,
+      &:focus {
+        box-shadow: 0 0 0 1px #82cca9 inset !important;
+      }
+    }
+
+    .el-input__prefix {
+      color: #6b7280;
+      margin-right: 6px;
+    }
+  }
+
+  .custom-input .el-input__wrapper {
+    min-height: 42px;
+    padding: 0 14px;
+    align-items: center;
+
+    .el-input__inner {
+      font-size: 16px;
+      line-height: 20px;
+    }
+  }
+
+  .custom-input .el-input__prefix,
+  .custom-input .el-input__prefix-inner {
+    display: flex;
+    align-items: center;
+    line-height: 20px;
+  }
+
+  .custom-input .el-input__prefix {
+    margin-right: -3px;
+  }
+
+  .custom-input .currency-prefix {
+    position: relative;
+    top: -2px;
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    color: #6b7280;
+    font-size: 16px;
+    line-height: 20px;
+  }
+
+  .custom-textarea .el-textarea__inner {
+    min-height: 64px !important;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  /* 底部按钮区 (匹配图二的圆角与自定义绿色按钮) */
+  .el-dialog__footer {
+    padding: 12px 24px 16px;
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+
+      .el-button {
+        min-width: 76px;
+        height: 38px;
+        border-radius: 10px;
+        font-size: 14px;
+        padding: 0 16px;
+      }
+
+      .btn-cancel {
+        border: 1px solid #e5e7eb;
+        color: #4b5563;
+        background: #fff;
+
+        &:hover {
+          background-color: #f9fafb;
+        }
+      }
+
+      /* 增加权重覆盖 Element Plus 默认的 Primary 蓝色 */
+      .btn-confirm.el-button--primary {
+        background-color: #82cca9;
+        border-color: #82cca9;
+        color: #fff;
+
+        &:hover {
+          background-color: #6eb795;
+          border-color: #6eb795;
+        }
+      }
+    }
+  }
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .recharge-custom-dialog {
+    width: 92% !important;
+
+    .el-dialog__header {
+      padding: 20px;
+    }
+
+    .el-dialog__body {
+      padding: 16px 20px;
+    }
+
+    .el-dialog__footer {
+      padding: 16px 20px;
+    }
   }
 }
 </style>

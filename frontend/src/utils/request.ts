@@ -98,6 +98,7 @@ function handleSessionExpired() {
 function defaultErrorMessage(status: number): string {
   if (status === 400) return 'Request parameters are invalid'
   if (status === 401) return 'Your session has expired, please sign in again'
+  if (status === 402) return '余额不足'
   if (status === 403) return 'You do not have permission to perform this action'
   if (status === 404) return 'Requested resource was not found'
   if (status === 429) return 'Too many requests, please try again later'

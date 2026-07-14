@@ -167,6 +167,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, type Component } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import {
@@ -184,9 +185,10 @@ import {
   DArrowRight,
 } from '@element-plus/icons-vue'
 import logoUrl from '@/assets/logo.png'
-import { authApi, userAccountApi, type CurrentUser } from '@/utils/api'
+import { authApi, type CurrentUser } from '@/utils/api'
 import { MENU_CODES, type MenuCode } from '@/utils/authorization'
 import { clearAccessToken } from '@/utils/auth'
+import { useAccountStore } from '@/stores/account'
 
 interface MenuItem {
   code: MenuCode
@@ -202,7 +204,8 @@ const menuCollapsed = ref(false)
 const drawerVisible = ref(false)
 const isDark = ref(false)
 const currentUser = ref<CurrentUser | null>(null)
-const balance = ref<number | null>(null)
+const accountStore = useAccountStore()
+const { balance } = storeToRefs(accountStore)
 const logoutLoading = ref(false)
 const screenWidth = ref(window.innerWidth)
 
@@ -256,11 +259,7 @@ const loadCurrentUser = async () => {
 }
 
 const loadBalance = async () => {
-  try {
-    balance.value = (await userAccountApi.balance()).balance
-  } catch {
-    balance.value = null
-  }
+  await accountStore.refreshBalance()
 }
 
 function filterAccessibleMenus(menuItems: MenuItem[]) {
@@ -290,7 +289,7 @@ const handleLogout = async () => {
   } finally {
     clearAccessToken()
     currentUser.value = null
-    balance.value = null
+    accountStore.clearBalance()
     logoutLoading.value = false
   }
 

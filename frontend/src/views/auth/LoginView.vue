@@ -110,7 +110,7 @@ const goToRegister = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .login-container {
   position: relative;
   display: flex;

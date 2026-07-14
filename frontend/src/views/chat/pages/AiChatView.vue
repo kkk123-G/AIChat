@@ -1,608 +1,653 @@
 <template>
   <div class="app-layout">
-    <!-- H5端 侧边栏遮罩层 -->
-    <div class="sidebar-overlay" :class="{ 'is-visible': isMobileSidebarOpen }" @click="isMobileSidebarOpen = false">
-    </div>
+    <div class="sidebar-overlay" :class="{ 'is-visible': isMobileSidebarOpen }" @click="isMobileSidebarOpen = false" />
 
-    <!-- 左侧聊天记录区域 -->
     <aside class="sidebar" :class="{ 'is-mobile-open': isMobileSidebarOpen }">
-      <!-- 顶部操作区：新聊天 & 搜索 -->
       <div class="sidebar-header">
-        <el-button class="new-chat-btn" plain @click="handleNewChat">
-          <span class="plus-icon">+</span> 新聊天
+        <el-button class="new-chat-btn" plain :loading="creatingConversation" @click="handleNewChat">
+          <el-icon><Plus /></el-icon>
+          新聊天
         </el-button>
-        <div class="search-wrapper">
-          <el-input v-model="searchQuery" placeholder="搜索..." clearable class="search-input">
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </div>
+        <el-input v-model="searchQuery" placeholder="搜索聊天记录" clearable class="search-input">
+          <template #prefix><el-icon><Search /></el-icon></template>
+        </el-input>
       </div>
 
-      <!-- 历史列表区 -->
-      <nav class="session-list">
-        <div v-for="session in filteredSessions" :key="session.id"
-          :class="['session-item', { 'is-active': session.id === activeSessionId }]" @click="selectSession(session.id)">
-          <div class="session-title">{{ session.title }}</div>
+      <nav v-loading="loadingConversations" class="session-list">
+        <div
+          v-for="session in sessions"
+          :key="session.id"
+          class="session-item"
+          :class="{ 'is-active': session.id === activeSessionId }"
+        >
+          <button class="session-select" :disabled="isGenerating" @click="selectSession(session.id)">
+            <span class="session-title">{{ session.title }}</span>
+          </button>
+          <el-tooltip content="删除会话" placement="right">
+            <el-button
+              class="session-delete"
+              text
+              circle
+              aria-label="删除会话"
+              :loading="deletingSessionId === session.id"
+              :disabled="isGenerating || deletingSessionId !== null"
+              @click.stop="deleteSession(session.id)"
+            >
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </el-tooltip>
         </div>
-        <div v-if="filteredSessions.length === 0" class="empty-search">
-          无相关记录
-        </div>
+        <el-empty v-if="!loadingConversations && sessions.length === 0" :image-size="56" description="暂无聊天记录" />
       </nav>
     </aside>
 
-    <!-- 右侧聊天主区域 -->
-    <div class="chat-container">
-      <!-- 顶部标题栏 -->
+    <section class="chat-container">
       <header class="chat-header">
-        <!-- H5端 切换侧边栏按钮 -->
-        <button class="menu-toggle-btn" @click="isMobileSidebarOpen = true">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-        <div class="header-text">
-          <h1 class="title">{{ currentSession?.title || '智能对话' }}</h1>
-        </div>
+        <el-button class="menu-toggle-btn" text circle aria-label="打开聊天列表" @click="isMobileSidebarOpen = true">
+          <el-icon><Expand /></el-icon>
+        </el-button>
+        <h1 class="title">{{ activeSession?.title || '智能对话' }}</h1>
       </header>
 
-      <!-- 聊天内容区域 -->
-      <main class="chat-main" ref="chatMainRef">
-        <div v-for="msg in currentSession?.messages" :key="msg.id" :class="['message-row', `is-${msg.role}`]">
-          <div class="avatar">
-            {{ msg.role === 'user' ? 'Me' : 'AI' }}
-          </div>
+      <main ref="chatMainRef" v-loading="loadingMessages" class="chat-main">
+        <el-empty v-if="activeSession && !loadingMessages && activeSession.messages.length === 0" description="开始一段新的对话" />
+        <article
+          v-for="message in activeSession?.messages"
+          :key="message.id"
+          class="message-row"
+          :class="`is-${message.role}`"
+        >
+          <el-avatar class="avatar" :size="34">{{ message.role === 'user' ? '我' : 'AI' }}</el-avatar>
           <div class="message-bubble">
-            <p class="content">{{ msg.content }}</p>
+            <p v-if="message.role === 'user'" class="content">{{ message.content }}</p>
+            <div v-else class="markdown-content" v-html="renderMarkdown(message.content)" />
           </div>
-        </div>
-
-        <!-- 占位符，用于自动滚动到底部 -->
-        <div ref="scrollAnchor"></div>
+        </article>
+        <div ref="scrollAnchor" />
       </main>
 
-      <!-- 底部输入区域 -->
       <footer class="chat-footer">
         <div class="input-wrapper">
-          <el-input v-model="inputText" type="textarea" :rows="1" autosize placeholder="有问题，尽管问" class="chat-input"
-            @keydown.enter.prevent="handleSend" />
-
-          <div class="action-btn-group">
-            <el-button v-if="!isGenerating" type="primary" class="send-btn" :disabled="!inputText.trim()"
-              @click="handleSend">
-              发送
-            </el-button>
-            <el-button v-else type="info" plain class="stop-btn" @click="stopGeneration">
-              停止
-            </el-button>
-          </div>
+          <el-input
+            v-model="inputText"
+            type="textarea"
+            :autosize="{ minRows: 1, maxRows: 6 }"
+            resize="none"
+            placeholder="输入消息，Enter 发送，Shift + Enter 换行"
+            class="chat-input"
+            :disabled="!activeSession || isGenerating"
+            @keydown.enter.exact.prevent="handleSend"
+          />
+          <el-button
+            v-if="!isGenerating"
+            type="primary"
+            circle
+            class="send-btn"
+            aria-label="发送消息"
+            :disabled="!inputText.trim() || !activeSession"
+            @click="handleSend"
+          >
+            <el-icon><Promotion /></el-icon>
+          </el-button>
+          <el-button v-else type="danger" circle plain class="stop-btn" aria-label="停止生成" @click="stopGeneration">
+            <el-icon><VideoPause /></el-icon>
+          </el-button>
         </div>
       </footer>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, Expand, Plus, Promotion, Search, VideoPause } from '@element-plus/icons-vue'
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
+import { chatApi, type ChatMessage, type Conversation } from '@/utils/api'
+import { useAccountStore } from '@/stores/account'
 
-// --- 类型定义 ---
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
+interface ChatSession extends Conversation {
+  messages: ChatMessage[]
 }
 
-interface ChatSession {
-  id: string
-  title: string
-  messages: Message[]
-}
-
-// --- 状态管理 ---
 const inputText = ref('')
 const searchQuery = ref('')
+const sessions = ref<ChatSession[]>([])
+const activeSessionId = ref<string | null>(null)
 const isGenerating = ref(false)
-const isMobileSidebarOpen = ref(false) // H5侧边栏开关
-const activeSessionId = ref('1')
-
+const isMobileSidebarOpen = ref(false)
+const loadingConversations = ref(false)
+const loadingMessages = ref(false)
+const creatingConversation = ref(false)
+const deletingSessionId = ref<string | null>(null)
 const chatMainRef = ref<HTMLElement | null>(null)
 const scrollAnchor = ref<HTMLElement | null>(null)
+const accountStore = useAccountStore()
 
-// 模拟多条聊天历史数据
-const sessions = ref<ChatSession[]>([
-  {
-    id: '1',
-    title: '关于极简主义的探讨',
-    messages: [
-      { id: '1-1', role: 'assistant', content: '你好，我是你的专属助手。请问今天有什么我可以帮你的吗？' },
-      { id: '1-2', role: 'user', content: '我想了解一下极简主义设计的核心理念是什么？' },
-      { id: '1-3', role: 'assistant', content: '极简主义设计的核心理念可以概括为“少即是多（Less is more）”。它强调去除一切不必要的装饰和冗余元素，保留事物最本质的功能和结构。' }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Vue3响应式原理',
-    messages: [
-      { id: '2-1', role: 'user', content: '简述一下 Vue3 的 Proxy 相比 Vue2 有什么优势？' },
-      { id: '2-2', role: 'assistant', content: 'Vue3 改用 Proxy 替代了 Object.defineProperty。主要优势在于：1. 可以完美监听对象属性的添加与删除；2. 完美支持数组的索引与长度变化监听；3. 嵌套对象的收集是惰性触发的，性能更好。' }
-    ]
-  },
-  {
-    id: '3',
-    title: 'TypeScript 泛型工具',
-    messages: [
-      { id: '3-1', role: 'user', content: 'Omit 和 Pick 有什么区别？' },
-      { id: '3-2', role: 'assistant', content: 'Pick<T, K> 是从类型 T 中挑选出一组属性 K 来构建新类型；而 Omit<T, K> 则是从类型 T 中忽略一组属性 K，用剩余的属性构建新类型。两者逻辑恰好相反。' }
-    ]
-  }
-])
+let searchTimer: ReturnType<typeof window.setTimeout> | undefined
+let streamAbortController: AbortController | undefined
+let titleRefreshTimers: ReturnType<typeof window.setTimeout>[] = []
 
-// --- 计算属性 ---
-const currentSession = computed(() => {
-  return sessions.value.find(s => s.id === activeSessionId.value)
+const activeSession = computed(() => sessions.value.find((session) => session.id === activeSessionId.value))
+
+watch(searchQuery, () => {
+  if (searchTimer) window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => void loadConversations(), 250)
 })
 
-// 根据搜索关键词过滤历史记录
-const filteredSessions = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) return sessions.value
-  return sessions.value.filter(s =>
-    s.title.toLowerCase().includes(query) ||
-    s.messages.some(m => m.content.toLowerCase().includes(query))
-  )
-})
-
-// --- 方法 ---
-
-// 切换会话
-const selectSession = (id: string) => {
-  activeSessionId.value = id
-  isMobileSidebarOpen.value = false // 移动端选择后自动收起
-  scrollToBottom()
-}
-
-// 新建聊天
-const handleNewChat = () => {
-  const newId = Date.now().toString()
-  sessions.value.unshift({
-    id: newId,
-    title: `新对话 ${sessions.value.length + 1}`,
-    messages: [
-      { id: `${newId}-init`, role: 'assistant', content: '新对话已开启，有什么我可以帮你的？' }
-    ]
-  })
-  activeSessionId.value = newId
-  isMobileSidebarOpen.value = false
-  scrollToBottom()
-}
-
-// 滚动到底部
-const scrollToBottom = async () => {
-  await nextTick()
-  if (scrollAnchor.value) {
-    scrollAnchor.value.scrollIntoView({ behavior: 'smooth' })
-  }
-}
-
-// 发送消息
-const handleSend = () => {
-  const text = inputText.value.trim()
-  if (!text || !currentSession.value) return
-
-  // 1. 添加用户消息
-  currentSession.value.messages.push({
-    id: Date.now().toString(),
-    role: 'user',
-    content: text
-  })
-  inputText.value = ''
-  scrollToBottom()
-
-  // 2. 模拟触发 AI 生成
-  isGenerating.value = true
-  const assistantMsgId = (Date.now() + 1).toString()
-
-  currentSession.value.messages.push({
-    id: assistantMsgId,
-    role: 'assistant',
-    content: '正在思考中...'
-  })
-  scrollToBottom()
-
-  simulateAIResponse(assistantMsgId)
-}
-
-// 停止生成
-const stopGeneration = () => {
-  isGenerating.value = false
-  ElMessage.success('已停止生成')
-}
-
-// 模拟 AI 回复过程
-const simulateAIResponse = (msgId: string) => {
-  setTimeout(() => {
-    if (!isGenerating.value || !currentSession.value) return
-    const targetMsg = currentSession.value.messages.find(m => m.id === msgId)
-    if (targetMsg) {
-      targetMsg.content = '这就为您处理。在极简风格的前端架构中，我们更倾向于通过高内聚的排版和自然的组件边界来替代生硬的分割线，从而带来流畅的视觉体验。'
+async function loadConversations(selectFirst = false) {
+  loadingConversations.value = true
+  try {
+    const conversations = await chatApi.listConversations(searchQuery.value.trim() || undefined)
+    const existingMessages = new Map(sessions.value.map((session) => [session.id, session.messages]))
+    sessions.value = conversations.map((conversation) => ({
+      ...conversation,
+      messages: existingMessages.get(conversation.id) || [],
+    }))
+    const firstSession = sessions.value[0]
+    if (selectFirst && firstSession && !activeSessionId.value) {
+      await selectSession(firstSession.id)
     }
+  } finally {
+    loadingConversations.value = false
+  }
+}
+
+async function selectSession(id: string) {
+  if (id === activeSessionId.value || isGenerating.value) return
+  activeSessionId.value = id
+  isMobileSidebarOpen.value = false
+  const session = sessions.value.find((item) => item.id === id)
+  if (!session) return
+
+  loadingMessages.value = true
+  try {
+    session.messages = await chatApi.listMessages(id)
+    await scrollToBottom(false)
+  } finally {
+    loadingMessages.value = false
+  }
+}
+
+async function handleNewChat() {
+  if (isGenerating.value || creatingConversation.value) return
+  creatingConversation.value = true
+  try {
+    const conversation = await chatApi.createConversation()
+    sessions.value.unshift({ ...conversation, messages: [] })
+    activeSessionId.value = conversation.id
+    isMobileSidebarOpen.value = false
+    await scrollToBottom(false)
+  } finally {
+    creatingConversation.value = false
+  }
+}
+
+async function deleteSession(id: string) {
+  if (isGenerating.value || deletingSessionId.value) return
+  try {
+    await ElMessageBox.confirm('删除后无法恢复该会话及其聊天记录。', '删除会话', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+
+  const index = sessions.value.findIndex((session) => session.id === id)
+  if (index < 0) return
+  deletingSessionId.value = id
+  try {
+    await chatApi.deleteConversation(id)
+    const wasActive = activeSessionId.value === id
+    sessions.value = sessions.value.filter((session) => session.id !== id)
+    if (wasActive) {
+      activeSessionId.value = null
+      const nextSession = sessions.value[index] || sessions.value[index - 1]
+      if (nextSession) {
+        await selectSession(nextSession.id)
+      }
+    }
+    ElMessage.success('会话已删除')
+  } finally {
+    deletingSessionId.value = null
+  }
+}
+
+async function handleSend() {
+  const content = inputText.value.trim()
+  const session = activeSession.value
+  if (!content || !session || isGenerating.value) return
+
+  const userMessage: ChatMessage = {
+    id: `temporary-user-${Date.now()}`,
+    role: 'user',
+    content,
+    createdAt: new Date().toISOString(),
+  }
+  const assistantMessage: ChatMessage = {
+    id: `temporary-assistant-${Date.now()}`,
+    role: 'assistant',
+    content: '',
+    createdAt: new Date().toISOString(),
+  }
+  const conversationId = session.id
+  session.messages.push(userMessage, assistantMessage)
+  inputText.value = ''
+  isGenerating.value = true
+  const controller = new AbortController()
+  streamAbortController = controller
+  await scrollToBottom()
+
+  try {
+    await chatApi.streamMessage(conversationId, content, controller.signal, (event) => {
+      if (activeSessionId.value !== conversationId) return
+      if (event.type === 'delta' && event.delta) {
+        assistantMessage.content += event.delta
+        void scrollToBottom()
+      }
+      if (event.type === 'done') {
+        if (event.message) {
+          assistantMessage.id = event.message.id
+          assistantMessage.content = event.message.content
+          assistantMessage.createdAt = event.message.createdAt
+          scheduleTitleRefresh()
+        }
+        finishGeneration(controller)
+      }
+      if (event.type === 'error') {
+        throw new Error(event.error || 'AI response failed')
+      }
+    })
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === 'AbortError')) {
+      const message = error instanceof Error ? error.message : 'AI response failed'
+      ElMessage.error(message)
+    }
+    if (!assistantMessage.content) {
+      session.messages = session.messages.filter((message) => message !== assistantMessage)
+    }
+  } finally {
+    if (streamAbortController === controller) {
+      isGenerating.value = false
+      streamAbortController = undefined
+    }
+    void accountStore.refreshBalance()
+  }
+}
+
+function scheduleTitleRefresh() {
+  titleRefreshTimers.forEach((timer) => window.clearTimeout(timer))
+  titleRefreshTimers = [1_000, 3_500].map((delay) => window.setTimeout(() => void loadConversations(), delay))
+}
+
+function finishGeneration(controller: AbortController) {
+  if (streamAbortController === controller) {
     isGenerating.value = false
-    scrollToBottom()
-  }, 1200)
+    streamAbortController = undefined
+  }
+}
+
+function stopGeneration() {
+  streamAbortController?.abort()
+  ElMessage.info('已停止生成')
+}
+
+function renderMarkdown(content: string) {
+  return DOMPurify.sanitize(marked.parse(content || '...') as string)
+}
+
+async function scrollToBottom(smooth = true) {
+  await nextTick()
+  scrollAnchor.value?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'end' })
 }
 
 onMounted(() => {
-  scrollToBottom()
+  void loadConversations(true)
+})
+
+onBeforeUnmount(() => {
+  if (searchTimer) window.clearTimeout(searchTimer)
+  titleRefreshTimers.forEach((timer) => window.clearTimeout(timer))
+  streamAbortController?.abort()
 })
 </script>
 
 <style scoped lang="scss">
-// 极简风格颜色规范
-$bg-color: #fafafa;
+$bg-color: #f8fafc;
 $surface-color: #ffffff;
-$border-color: #f0f0f0;
-$text-primary: #1a1a1a;
-$text-regular: #5f5f5f;
-$text-secondary: #999999;
-$active-bg: #f5f5f5;
-$user-bubble-bg: #f0f0f2;
-$ai-bubble-bg: #ffffff;
+$border-color: #e5e7eb;
+$text-primary: #1f2937;
+$text-regular: #4b5563;
+$text-secondary: #9ca3af;
+$accent: #0d9488;
 
 .app-layout {
   display: flex;
   width: 100%;
   height: 100%;
-  background-color: $bg-color;
+  min-height: 0;
   overflow: hidden;
-  position: relative;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: $bg-color;
+}
 
-  @media (max-width: 768px) {
-    height: 100dvh;
+.sidebar {
+  display: flex;
+  width: 280px;
+  flex: 0 0 280px;
+  flex-direction: column;
+  border-right: 1px solid $border-color;
+  background: $surface-color;
+  z-index: 2;
+}
+
+.sidebar-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid $border-color;
+}
+
+.new-chat-btn {
+  justify-content: flex-start;
+  height: 38px;
+  border-color: #99f6e4;
+  color: #0f766e;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px $border-color inset;
+}
+
+.session-list {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.session-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  margin-bottom: 3px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: transparent;
+  color: $text-regular;
+
+  &:hover {
+    background: #f1f5f9;
+
+    .session-delete:not(:disabled) {
+      opacity: 1;
+    }
+  }
+
+  &.is-active {
+    background: #ccfbf1;
+    color: #0f766e;
+    font-weight: 600;
+
+    .session-select {
+      color: #0f766e;
+      font-weight: 600;
+    }
   }
 }
 
-/* ==========================================================================
-   左侧侧边栏 (Sidebar) Style
-   ========================================================================== */
-.sidebar {
-  width: 280px;
-  height: 100%;
-  background-color: $surface-color;
-  border-right: 1px solid $border-color;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  z-index: 100;
+.session-select {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  padding: 11px 4px 11px 12px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 
-  /* H5端自适应：变为抽屉式滑出 */
-  @media (max-width: 768px) {
+  &:disabled {
+    cursor: wait;
+  }
+}
+
+.session-delete {
+  width: 30px;
+  height: 30px;
+  margin-right: 4px;
+  color: $text-secondary;
+  opacity: 0;
+
+  &:hover:not(:disabled) {
+    color: #dc2626;
+  }
+}
+
+@media (max-width: 768px) {
+  .session-delete {
+    opacity: 1;
+  }
+}
+
+.session-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-container {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.chat-header {
+  display: flex;
+  min-height: 60px;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid $border-color;
+  padding: 0 24px;
+  background: $surface-color;
+}
+
+.title {
+  margin: 0;
+  overflow: hidden;
+  color: $text-primary;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-toggle-btn {
+  display: none;
+}
+
+.chat-main {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px clamp(16px, 5vw, 72px);
+}
+
+.message-row {
+  display: flex;
+  max-width: 920px;
+  gap: 12px;
+  margin: 0 auto 24px;
+  align-items: flex-start;
+
+  &.is-user {
+    flex-direction: row-reverse;
+
+    .avatar {
+      background: $accent;
+    }
+
+    .message-bubble {
+      background: #ccfbf1;
+    }
+  }
+
+  &.is-assistant .avatar {
+    border: 1px solid $border-color;
+    background: $surface-color;
+    color: $accent;
+  }
+}
+
+.message-bubble {
+  max-width: min(82%, 760px);
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: $surface-color;
+  color: $text-primary;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.content {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.markdown-content {
+  :deep(*) {
+    max-width: 100%;
+  }
+
+  :deep(p:first-child),
+  :deep(h1:first-child),
+  :deep(h2:first-child),
+  :deep(h3:first-child) {
+    margin-top: 0;
+  }
+
+  :deep(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  :deep(pre) {
+    overflow-x: auto;
+    border-radius: 6px;
+    padding: 12px;
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+
+  :deep(code) {
+    border-radius: 3px;
+    padding: 2px 4px;
+    background: #f1f5f9;
+    font-family: Consolas, monospace;
+  }
+
+  :deep(pre code) {
+    padding: 0;
+    background: transparent;
+  }
+
+  :deep(a) {
+    color: #0f766e;
+  }
+
+  :deep(table) {
+    border-collapse: collapse;
+  }
+
+  :deep(th),
+  :deep(td) {
+    border: 1px solid $border-color;
+    padding: 6px 8px;
+  }
+}
+
+.chat-footer {
+  padding: 16px clamp(16px, 5vw, 72px) 24px;
+  background: $bg-color;
+}
+
+.input-wrapper {
+  display: flex;
+  max-width: 920px;
+  margin: 0 auto;
+  align-items: flex-end;
+  gap: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px;
+  background: $surface-color;
+
+  &:focus-within {
+    border-color: $accent;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.12);
+  }
+}
+
+.chat-input {
+  flex: 1;
+
+  :deep(.el-textarea__inner) {
+    box-shadow: none;
+  }
+}
+
+.send-btn {
+  border-color: $accent;
+  background: $accent;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
     position: fixed;
-    left: -280px;
     top: 0;
     bottom: 0;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.03);
+    left: -280px;
+    transition: transform 0.2s ease;
 
     &.is-mobile-open {
       transform: translateX(280px);
     }
   }
-}
 
-.sidebar-header {
-  padding: 24px 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-
-  .new-chat-btn {
-    width: 100%;
-    height: 40px;
-    border: 1px dashed #dcdfe6;
-    border-radius: 6px;
-    color: $text-regular;
-    font-size: 14px;
-    letter-spacing: 0.5px;
-
-    &:hover {
-      color: $text-primary;
-      border-color: $text-primary;
-      background-color: $bg-color;
-    }
-
-    .plus-icon {
-      margin-right: 4px;
-      font-size: 16px;
-      font-weight: 300;
-    }
+  .sidebar-overlay.is-visible {
+    position: fixed;
+    z-index: 1;
+    display: block;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.28);
   }
-
-  .search-wrapper {
-    :deep(.el-input__wrapper) {
-      box-shadow: none !important;
-      border: 1px solid $border-color;
-      background-color: #ffffff;
-      /* 修改为纯白背景 */
-      border-radius: 6px;
-      padding: 0 10px;
-    }
-  }
-}
-
-.session-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: transparent;
-    border-radius: 2px;
-  }
-
-  &:hover::-webkit-scrollbar-thumb {
-    background: #e0e0e0;
-  }
-
-  .session-item {
-    padding: 12px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 0 6px 4px;
-    transition: background-color 0.2s;
-
-    &:hover {
-      background-color: $bg-color;
-    }
-
-    &.is-active {
-      background-color: $active-bg;
-
-      .session-title {
-        color: $text-primary;
-        font-weight: 500;
-      }
-    }
-
-    .session-title {
-      font-size: 14px;
-      color: $text-regular;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-
-  .empty-search {
-    text-align: center;
-    font-size: 12px;
-    color: $text-secondary;
-    margin-top: 24px;
-  }
-}
-
-/* H5 遮罩层 */
-.sidebar-overlay {
-  display: none;
-
-  @media (max-width: 768px) {
-    &.is-visible {
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.15);
-      backdrop-filter: blur(1px);
-      z-index: 99;
-    }
-  }
-}
-
-/* ==========================================================================
-   右侧聊天区域 (Chat Container) Style
-   ========================================================================== */
-.chat-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background-color: $bg-color;
-  position: relative;
-}
-
-.chat-header {
-  flex-shrink: 0;
-  padding: 18px 24px;
-  background-color: $surface-color;
-  border-bottom: 1px solid $border-color;
-  display: flex;
-  align-items: center;
-  gap: 16px;
 
   .menu-toggle-btn {
-    display: none;
-    background: none;
-    border: none;
-    color: $text-regular;
-    padding: 4px;
-    cursor: pointer;
-
-    @media (max-width: 768px) {
-      display: block;
-    }
+    display: inline-flex;
   }
 
-  .header-text {
-    display: flex;
-    align-items: baseline;
+  .chat-header {
+    padding: 0 12px;
   }
 
-  .title {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 500;
-    color: $text-primary;
-    letter-spacing: 0.5px;
-  }
-}
-
-.chat-main {
-  flex: 1;
-  overflow-y: auto;
-  padding: 32px 40px;
-  scroll-behavior: smooth;
-
-  @media (max-width: 768px) {
+  .chat-main {
     padding: 16px;
   }
 
-  .message-row {
-    display: flex;
-    margin-bottom: 28px;
-    align-items: flex-start;
-    gap: 16px;
-
-    &.is-user {
-      flex-direction: row-reverse;
-
-      .avatar {
-        background-color: $text-primary;
-        color: #fff;
-      }
-
-      .message-bubble {
-        background-color: $user-bubble-bg;
-      }
-    }
-
-    &.is-assistant {
-      .avatar {
-        background-color: #fff;
-        color: $text-primary;
-        border: 1px solid #e0e0e0;
-      }
-
-      .message-bubble {
-        background-color: $ai-bubble-bg;
-        border: 1px solid $border-color;
-      }
-    }
-  }
-
-  .avatar {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 500;
-    flex-shrink: 0;
-  }
-
   .message-bubble {
-    max-width: 80%;
-    padding: 12px 18px;
-    border-radius: 8px;
-    line-height: 1.6;
-
-    .content {
-      margin: 0;
-      color: $text-primary;
-      font-size: 15px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    @media (max-width: 768px) {
-      max-width: 88%;
-      padding: 10px 14px;
-
-      .content {
-        font-size: 14px;
-      }
-    }
-  }
-}
-
-.chat-footer {
-  flex-shrink: 0;
-  padding: 24px 40px;
-  background-color: transparent;
-
-  @media (max-width: 768px) {
-    padding: 12px 16px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
-    background-color: $surface-color;
-    border-top: 1px solid $border-color;
+    max-width: 84%;
   }
 
-  .input-wrapper {
-    display: flex;
-    align-items: flex-end;
-    gap: 12px;
-    background-color: $surface-color;
-    border: 1px solid #dcdfe6;
-    border-radius: 8px;
-    padding: 10px 12px;
-    transition: border-color 0.2s;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.01);
-
-    &:focus-within {
-      border-color: $text-primary;
-    }
-
-    :deep(.el-textarea__inner) {
-      box-shadow: none !important;
-      border: none !important;
-      padding: 4px 4px;
-      background-color: transparent;
-      font-family: inherit;
-      resize: none;
-      font-size: 15px;
-      color: $text-primary;
-    }
-  }
-
-  .action-btn-group {
-    flex-shrink: 0;
-
-    .send-btn,
-    .stop-btn {
-      height: 34px;
-      border-radius: 6px;
-      padding: 0 16px;
-      font-weight: 500;
-      font-size: 13px;
-    }
-
-    .send-btn {
-      background-color: $text-primary;
-      border-color: $text-primary;
-
-      &:hover {
-        background-color: #333333;
-        border-color: #333333;
-      }
-
-      &:disabled {
-        background-color: #e4e7ed;
-        border-color: #e4e7ed;
-        color: #a8abb2;
-      }
-    }
+  .chat-footer {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   }
 }
 </style>
