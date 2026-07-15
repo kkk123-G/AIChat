@@ -67,6 +67,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/chat/pages/UsageRecordsView.vue'),
         meta: { menuCode: MENU_CODES.usageRecords, title: '使用记录' },
       },
+      {
+        path: 'admin/recharge-records',
+        name: 'recharge-records',
+        component: () => import('@/views/chat/pages/RechargeRecordsView.vue'),
+        meta: { menuCode: MENU_CODES.rechargeRecords, title: '充值记录' },
+      },
     ],
   },
   {

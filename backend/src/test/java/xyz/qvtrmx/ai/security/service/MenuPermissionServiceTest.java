@@ -17,6 +17,7 @@ class MenuPermissionServiceTest {
         assertEquals(List.of(
                 MenuPermissionService.USER_DASHBOARD,
                 MenuPermissionService.AI_CHAT,
+                MenuPermissionService.BALANCE_CHANGES,
                 MenuPermissionService.USER_PROFILE
         ), menuCodes);
     }
@@ -29,8 +30,10 @@ class MenuPermissionServiceTest {
                 MenuPermissionService.ADMIN_DASHBOARD,
                 MenuPermissionService.USER_MANAGEMENT,
                 MenuPermissionService.USAGE_RECORDS,
+                MenuPermissionService.RECHARGE_RECORDS,
                 MenuPermissionService.USER_DASHBOARD,
                 MenuPermissionService.AI_CHAT,
+                MenuPermissionService.BALANCE_CHANGES,
                 MenuPermissionService.USER_PROFILE
         ), menuCodes);
     }

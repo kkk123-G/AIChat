@@ -18,6 +18,7 @@
             v-for="item in accessibleMainMenuItems"
             :key="item.index"
             :index="item.index"
+            :disabled="item.disabled"
           >
             <el-icon>
               <component :is="item.icon" />
@@ -35,6 +36,7 @@
             v-for="item in accessibleAccountMenuItems"
             :key="item.index"
             :index="item.index"
+            :disabled="item.disabled"
           >
             <el-icon>
               <component :is="item.icon" />
@@ -82,6 +84,7 @@
             v-for="item in accessibleMainMenuItems"
             :key="item.index"
             :index="item.index"
+            :disabled="item.disabled"
             @click="drawerVisible = false"
           >
             <el-icon>
@@ -98,6 +101,7 @@
             v-for="item in accessibleAccountMenuItems"
             :key="item.index"
             :index="item.index"
+            :disabled="item.disabled"
             @click="drawerVisible = false"
           >
             <el-icon>
@@ -195,6 +199,7 @@ interface MenuItem {
   index: string
   title: string
   icon: Component
+  disabled?: boolean
 }
 
 const route = useRoute()
@@ -213,11 +218,13 @@ const mainMenuItems: MenuItem[] = [
   { code: MENU_CODES.adminDashboard, index: 'admin-dashboard', title: '仪表盘', icon: Odometer },
   { code: MENU_CODES.userManagement, index: 'user-management', title: '用户管理', icon: User },
   { code: MENU_CODES.usageRecords, index: 'usage-records', title: '使用记录', icon: Document },
+  { code: MENU_CODES.rechargeRecords, index: 'recharge-records', title: '充值记录', icon: Document },
 ]
 
 const accountMenuItems: MenuItem[] = [
   { code: MENU_CODES.userDashboard, index: 'user-dashboard', title: '仪表盘', icon: Odometer },
   { code: MENU_CODES.aiChat, index: 'ai-chat', title: 'ai聊天', icon: ChatDotRound },
+  { code: MENU_CODES.balanceChanges, index: 'balance-changes', title: '金额变动', icon: Document, disabled: true },
   { code: MENU_CODES.userProfile, index: 'user-profile', title: '个人资料', icon: Avatar },
 ]
 
@@ -689,8 +696,9 @@ $navbar-height: 60px;
       gap: 8px;
 
       .user-avatar {
-        background-color: #0d9488;
-        font-weight: bold;
+        background-color: #e0f2f1;
+        color: #00695c;
+        font-weight: 600;
       }
 
       .user-info {

@@ -26,18 +26,18 @@
       <div class="table-wrapper hidden-xs-only">
         <el-table v-loading="loading" :data="tableData" style="width: 100%" class="custom-table">
           <th class="hidden"></th>
-          <el-table-column label="账号" min-width="180">
+          <el-table-column label="账号" min-width="170">
             <template #default="scope">
               <div class="account-cell">
-                <el-avatar :size="28" :class="'avatar-' + scope.row.id">
-                  {{ scope.row.account.charAt(0).toUpperCase() }}
+                <el-avatar :size="28" class="user-avatar">
+                  {{ scope.row.account.slice(0, 2).toUpperCase() }}
                 </el-avatar>
                 <span class="account-text">{{ scope.row.account }}</span>
               </div>
             </template>
           </el-table-column>
 
-          <el-table-column label="角色" width="100">
+          <el-table-column label="角色" min-width="86">
             <template #default="scope">
               <span :class="['role-tag', scope.row.roleType]">
                 {{ scope.row.role }}
@@ -45,16 +45,17 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="余额" width="140">
+          <el-table-column label="余额" min-width="130">
             <template #default="scope">
               <div class="balance-cell">
                 <span class="balance-text">￥{{ scope.row.balance }}</span>
-                <button type="button" class="balance-type recharge-button" @click="openRechargeDialog(scope.row)">充值</button>
+                <button type="button" class="balance-type recharge-button"
+                  @click="openRechargeDialog(scope.row)">充值</button>
               </div>
             </template>
           </el-table-column>
 
-          <el-table-column label="状态" width="100">
+          <el-table-column label="状态" min-width="86">
             <template #default="scope">
               <div class="status-cell">
                 <span class="status-dot"></span>
@@ -63,16 +64,16 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="最后活跃时间" min-width="160">
+          <el-table-column label="最后活跃时间" min-width="164">
             <template #default="scope">{{ scope.row.lastActive }}</template>
           </el-table-column>
-          <el-table-column label="最后使用时间" min-width="160">
+          <el-table-column label="最后使用时间" min-width="164">
             <template #default="scope">{{ scope.row.lastUsed }}</template>
           </el-table-column>
-          <el-table-column label="创建时间" min-width="160">
+          <el-table-column label="创建时间" min-width="164">
             <template #default="scope">{{ scope.row.createTime }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="216" fixed="right">
+          <el-table-column label="操作" min-width="124" fixed="right">
             <template #default="scope">
               <div class="opera-actions">
                 <el-link type="primary" :underlined="false">
@@ -103,8 +104,8 @@
         <div v-for="item in tableData" :key="item.id" class="mobile-card">
           <div class="card-header">
             <div class="account-cell">
-              <el-avatar :size="28" :class="'avatar-' + item.id">
-                {{ item.account.charAt(0).toUpperCase() }}
+              <el-avatar :size="28" class="user-avatar">
+                {{ item.account.slice(0, 2).toUpperCase() }}
               </el-avatar>
               <span class="account-text">{{ item.account }}</span>
             </div>
@@ -152,12 +153,15 @@
 
     <section class="pagination-section">
       <div class="pagination-container">
-        <div class="total-text hidden-xs-only">
-          显示 {{ pageStart }} 至 {{ pageEnd }} 共 {{ total }} 条结果 每页: {{ pageSize }}
+        <div class="pagination-summary">
+          <div class="total-text hidden-xs-only">
+            显示 {{ pageStart }} 至 {{ pageEnd }}，共 {{ total }} 条记录
+          </div>
+          <el-pagination v-model:page-size="pageSize" :page-sizes="[10, 20, 50]" layout="sizes" :total="total"
+            @size-change="handleSizeChange" />
         </div>
-        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
-          layout="prev, pager, next, sizes" :total="total" @current-change="handleCurrentChange"
-          @size-change="handleSizeChange" />
+        <el-pagination v-model:current-page="currentPage" :page-size="pageSize" layout="prev, pager, next"
+          :total="total" @current-change="handleCurrentChange" />
       </div>
     </section>
   </div>
@@ -167,7 +171,7 @@
     <div class="recharge-content">
       <div class="user-info-card">
         <el-avatar :size="42" class="user-avatar">
-          {{ currentRechargeUser?.account?.charAt(0).toUpperCase() || 'U' }}
+          {{ currentRechargeUser?.account?.slice(0, 2).toUpperCase() || 'U' }}
         </el-avatar>
         <div class="info-text">
           <div class="account">{{ currentRechargeUser?.account || '未知账户' }}</div>
@@ -205,6 +209,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleClose, EditPen, MoreFilled, Refresh, Search } from '@element-plus/icons-vue'
 import { adminUserApi, type AdminUser } from '@/utils/api'
+import { useAccountStore } from '@/stores/account'
 
 const searchQuery = ref('')
 const currentPage = ref(1)
@@ -224,6 +229,7 @@ interface UserItem {
 
 const tableData = ref<UserItem[]>([])
 const loading = ref(false)
+const accountStore = useAccountStore()
 
 const pageStart = computed(() => (total.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
 const pageEnd = computed(() => Math.min(currentPage.value * pageSize.value, total.value))
@@ -333,6 +339,7 @@ async function submitRecharge() {
     user.balance = Number(result.balance).toFixed(2)
     ElMessage.success('充值成功')
     rechargeDialogVisible.value = false
+    await accountStore.refreshBalance()
     await loadUsers()
   } finally {
     rechargeSubmitting.value = false
@@ -442,7 +449,7 @@ $border-color: #f0f2f5;
       }
 
       :deep(.el-table__cell .cell) {
-        padding: 0 14px;
+        padding: 0 12px;
       }
     }
   }
@@ -458,20 +465,10 @@ $border-color: #f0f2f5;
       color: #303133;
     }
 
-    // 依照原图生成不同颜色的圆形弱化头像背景
-    .avatar-3 {
-      background-color: #e1f5fe;
-      color: #0288d1;
-    }
-
-    .avatar-2 {
-      background-color: #e8f5e9;
-      color: #388e3c;
-    }
-
-    .avatar-1 {
+    .user-avatar {
       background-color: #e0f2f1;
-      color: #004d40;
+      color: #00695c;
+      font-weight: 600;
     }
   }
 
@@ -619,6 +616,13 @@ $border-color: #f0f2f5;
     color: #606266;
     font-size: 13px;
 
+    .pagination-summary {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 16px;
+    }
+
     :deep(.el-pager li) {
       border: 1px solid #dcdfe6;
       background-color: #fff;
@@ -658,7 +662,13 @@ $border-color: #f0f2f5;
     }
 
     .pagination-container {
-      justify-content: center; // 移动端分页居中
+      justify-content: space-between;
+      gap: 12px;
+      overflow-x: auto;
+
+      .pagination-summary {
+        gap: 12px;
+      }
     }
   }
 }
@@ -712,10 +722,8 @@ $border-color: #f0f2f5;
     margin-bottom: 16px;
 
     .user-avatar {
-      background-color: #cffff4;
-      /* 浅薄荷绿背景 */
-      color: #006856;
-      /* 深绿色文字 */
+      background-color: #e0f2f1;
+      color: #00695c;
       font-size: 18px;
       font-weight: 600;
       margin-right: 12px;

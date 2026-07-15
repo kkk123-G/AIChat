@@ -2,8 +2,10 @@ export const MENU_CODES = {
   adminDashboard: 'admin-dashboard',
   userManagement: 'user-management',
   usageRecords: 'usage-records',
+  rechargeRecords: 'recharge-records',
   userDashboard: 'user-dashboard',
   aiChat: 'ai-chat',
+  balanceChanges: 'balance-changes',
   userProfile: 'user-profile',
 } as const
 

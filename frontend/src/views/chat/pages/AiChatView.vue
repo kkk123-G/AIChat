@@ -41,7 +41,13 @@
             </el-button>
           </el-tooltip>
         </div>
-        <el-empty v-if="!loadingConversations && sessions.length === 0" :image-size="56" description="暂无聊天记录" />
+        <div v-if="!loadingConversations && sessions.length === 0" class="empty-session-state">
+          <el-empty description="暂无历史对话">
+            <template #image>
+              <el-icon class="empty-session-icon"><ChatDotRound /></el-icon>
+            </template>
+          </el-empty>
+        </div>
       </nav>
     </aside>
 
@@ -144,7 +150,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Expand, Plus, Promotion, Search, VideoPause } from '@element-plus/icons-vue'
+import { ChatDotRound, Delete, Expand, Plus, Promotion, Search, VideoPause } from '@element-plus/icons-vue'
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { chatApi, type ChatMessage, type Conversation } from '@/utils/api'
@@ -518,10 +524,25 @@ $accent: #0d9488;
 }
 
 .session-list {
+  display: flex;
   min-height: 0;
   flex: 1;
+  flex-direction: column;
   overflow-y: auto;
   padding: 8px;
+}
+
+.empty-session-state {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-session-icon {
+  color: $text-secondary;
+  font-size: 44px;
 }
 
 .session-item {

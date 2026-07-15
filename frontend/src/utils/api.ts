@@ -63,6 +63,23 @@ export interface AdminRechargeResult {
   balance: number
 }
 
+export interface RechargeRecord {
+  id: string
+  rechargeNo: string
+  username: string
+  amount: number
+  balanceBefore: number
+  balanceAfter: number
+  remark: string | null
+  operatorUsername: string
+  createdAt: string
+}
+
+export interface RechargeRecordListParams {
+  page: number
+  size: 10 | 20 | 50
+}
+
 export interface UserBalance {
   balance: number
 }
@@ -100,6 +117,11 @@ export const adminUserApi = {
   list: (params: AdminUserListParams) => request.get<PageResult<AdminUser>>('/admin/users', { params }),
   recharge: (userId: string, payload: AdminRechargePayload) =>
     request.post<AdminRechargeResult>(`/admin/users/${userId}/recharges`, payload),
+}
+
+export const adminRechargeRecordApi = {
+  list: (params: RechargeRecordListParams) =>
+    request.get<PageResult<RechargeRecord>>('/admin/recharge-records', { params }),
 }
 
 export const userAccountApi = {

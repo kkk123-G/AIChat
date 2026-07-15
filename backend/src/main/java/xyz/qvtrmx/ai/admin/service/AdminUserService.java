@@ -1,9 +1,15 @@
 package xyz.qvtrmx.ai.admin.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -11,6 +17,7 @@ import xyz.qvtrmx.ai.admin.dto.RechargeUserRequest;
 import xyz.qvtrmx.ai.admin.entity.UserRechargeRecord;
 import xyz.qvtrmx.ai.admin.mapper.UserRechargeRecordMapper;
 import xyz.qvtrmx.ai.admin.vo.AdminUserResponse;
+import xyz.qvtrmx.ai.admin.vo.RechargeRecordResponse;
 import xyz.qvtrmx.ai.admin.vo.RechargeUserResponse;
 import xyz.qvtrmx.ai.common.api.PageResponse;
 import xyz.qvtrmx.ai.common.exception.BusinessException;
@@ -41,12 +48,7 @@ public class AdminUserService {
     }
 
     public PageResponse<AdminUserResponse> listUsers(long pageNumber, long pageSize, String keyword) {
-        if (pageNumber < 1) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Page number must be greater than zero");
-        }
-        if (!ALLOWED_PAGE_SIZES.contains(pageSize)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Page size must be one of: 10, 20, 50");
-        }
+        validatePageArguments(pageNumber, pageSize);
 
         LambdaQueryWrapper<User> query = new LambdaQueryWrapper<User>()
                 .orderByDesc(User::getCreatedAt);
@@ -61,16 +63,37 @@ public class AdminUserService {
         return new PageResponse<>(records, page.getTotal(), page.getCurrent(), page.getSize(), page.getPages());
     }
 
+    public PageResponse<RechargeRecordResponse> listRechargeRecords(
+            long pageNumber,
+            long pageSize,
+            AuthenticatedUser operator
+    ) {
+        requireAdministrator(operator);
+        validatePageArguments(pageNumber, pageSize);
+
+        Page<UserRechargeRecord> page = userRechargeRecordMapper.selectPage(
+                new Page<>(pageNumber, pageSize),
+                new LambdaQueryWrapper<UserRechargeRecord>()
+                        .orderByDesc(UserRechargeRecord::getCreatedAt)
+                        .orderByDesc(UserRechargeRecord::getId)
+        );
+        Map<Long, User> usersById = loadUsersById(page.getRecords());
+        List<RechargeRecordResponse> records = page.getRecords().stream()
+                .map(record -> toRechargeRecordResponse(record, usersById))
+                .toList();
+        return new PageResponse<>(records, page.getTotal(), page.getCurrent(), page.getSize(), page.getPages());
+    }
+
     @org.springframework.transaction.annotation.Transactional
     public RechargeUserResponse rechargeUser(Long userId, RechargeUserRequest request, AuthenticatedUser operator) {
-        if (UserRole.fromCode(operator.role()) != UserRole.ADMIN) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "Administrator permission is required");
-        }
+        requireAdministrator(operator);
 
         String remark = StringUtils.hasText(request.remark()) ? request.remark().trim() : null;
         UserBalanceService.BalanceChange balanceChange = userBalanceService.recharge(userId, request.amount(), remark);
 
         UserRechargeRecord record = new UserRechargeRecord();
+        record.setId(IdWorker.getId());
+        record.setRechargeNo("RC" + record.getId());
         record.setUserId(userId);
         record.setOperatorId(operator.id());
         record.setAmount(request.amount());
@@ -79,6 +102,50 @@ public class AdminUserService {
         record.setRemark(remark);
         userRechargeRecordMapper.insert(record);
         return new RechargeUserResponse(userId, balanceChange.balanceAfter());
+    }
+
+    private void validatePageArguments(long pageNumber, long pageSize) {
+        if (pageNumber < 1) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Page number must be greater than zero");
+        }
+        if (!ALLOWED_PAGE_SIZES.contains(pageSize)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Page size must be one of: 10, 20, 50");
+        }
+    }
+
+    private void requireAdministrator(AuthenticatedUser operator) {
+        if (operator == null || operator.role() != UserRole.ADMIN.code()) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "Administrator permission is required");
+        }
+    }
+
+    private Map<Long, User> loadUsersById(List<UserRechargeRecord> records) {
+        Set<Long> userIds = new HashSet<>();
+        for (UserRechargeRecord record : records) {
+            userIds.add(record.getUserId());
+            userIds.add(record.getOperatorId());
+        }
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        return userMapper.selectByIds(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+    }
+
+    private RechargeRecordResponse toRechargeRecordResponse(UserRechargeRecord record, Map<Long, User> usersById) {
+        User recipient = usersById.get(record.getUserId());
+        User operator = usersById.get(record.getOperatorId());
+        return new RechargeRecordResponse(
+                String.valueOf(record.getId()),
+                record.getRechargeNo(),
+                recipient == null ? "Deleted user" : recipient.getUsername(),
+                record.getAmount(),
+                record.getBalanceBefore(),
+                record.getBalanceAfter(),
+                record.getRemark(),
+                operator == null ? "Deleted administrator" : operator.getUsername(),
+                record.getCreatedAt()
+        );
     }
 
     private AdminUserResponse toResponse(User user) {
