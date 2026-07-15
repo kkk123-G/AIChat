@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 import { authApi, type CurrentUser } from '@/utils/api'
-import { defaultDashboardRouteName, MENU_CODES, type MenuCode } from '@/utils/authorization'
+import { defaultConsoleRouteName, MENU_CODES, type MenuCode } from '@/utils/authorization'
 import { clearAccessToken, hasAccessToken } from '@/utils/auth'
 
 const routes: RouteRecordRaw[] = [
@@ -32,16 +32,16 @@ const routes: RouteRecordRaw[] = [
         redirect: { name: 'admin-dashboard' },
       },
       {
-        path: 'dashboard',
-        name: 'user-dashboard',
-        component: () => import('@/views/chat/pages/UserDashboardView.vue'),
-        meta: { menuCode: MENU_CODES.userDashboard, title: '仪表盘' },
-      },
-      {
         path: 'ai-chat',
         name: 'ai-chat',
-        component: () => import('@/views/chat/pages/AiChatView.vue'),
+        component: () => import('@/views/chat/AiChatView.vue'),
         meta: { menuCode: MENU_CODES.aiChat, title: 'ai聊天' },
+      },
+      {
+        path: 'balance-changes',
+        name: 'balance-changes',
+        component: () => import('@/views/user/BalanceChangesView.vue'),
+        meta: { menuCode: MENU_CODES.balanceChanges, title: '金额变动' },
       },
       {
         path: 'profile',
@@ -52,25 +52,19 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'admin/dashboard',
         name: 'admin-dashboard',
-        component: () => import('@/views/chat/pages/AdminDashboardView.vue'),
+        component: () => import('@/views/admin/AdminDashboardView.vue'),
         meta: { menuCode: MENU_CODES.adminDashboard, title: '仪表盘' },
       },
       {
         path: 'admin/users',
         name: 'user-management',
-        component: () => import('@/views/chat/pages/UserManagementView.vue'),
+        component: () => import('@/views/admin/UserManagementView.vue'),
         meta: { menuCode: MENU_CODES.userManagement, title: '用户管理' },
-      },
-      {
-        path: 'admin/usage-records',
-        name: 'usage-records',
-        component: () => import('@/views/chat/pages/UsageRecordsView.vue'),
-        meta: { menuCode: MENU_CODES.usageRecords, title: '使用记录' },
       },
       {
         path: 'admin/recharge-records',
         name: 'recharge-records',
-        component: () => import('@/views/chat/pages/RechargeRecordsView.vue'),
+        component: () => import('@/views/admin/RechargeRecordsView.vue'),
         meta: { menuCode: MENU_CODES.rechargeRecords, title: '充值记录' },
       },
     ],
@@ -95,7 +89,7 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresGuest && isAuthenticated) {
     const currentUser = await loadCurrentUser()
-    return currentUser ? defaultDashboardRoute(currentUser) : { name: 'login' }
+    return currentUser ? defaultConsoleRoute(currentUser) : { name: 'login' }
   }
 
   const menuCode = to.meta.menuCode as MenuCode | undefined
@@ -104,7 +98,7 @@ router.beforeEach(async (to) => {
   const currentUser = await loadCurrentUser()
   if (!currentUser) return { name: 'login', query: { redirect: to.fullPath } }
   if (!currentUser.menuCodes.includes(menuCode)) {
-    return defaultDashboardRoute(currentUser)
+    return defaultConsoleRoute(currentUser)
   }
 })
 
@@ -117,8 +111,8 @@ async function loadCurrentUser(): Promise<CurrentUser | null> {
   }
 }
 
-function defaultDashboardRoute(currentUser: CurrentUser) {
-  return { name: defaultDashboardRouteName(currentUser.menuCodes) }
+function defaultConsoleRoute(currentUser: CurrentUser) {
+  return { name: defaultConsoleRouteName(currentUser.menuCodes) }
 }
 
 router.afterEach((to) => {

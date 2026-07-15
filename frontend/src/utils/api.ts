@@ -63,6 +63,33 @@ export interface AdminRechargeResult {
   balance: number
 }
 
+export interface DashboardTrend {
+  labels: string[]
+  values: number[]
+}
+
+export interface DashboardTopUser {
+  username: string
+  values: number[]
+}
+
+export interface AdminDashboard {
+  userCount: number
+  newUsersToday: number
+  todayRequests: number
+  totalRequests: number
+  todaySuccesses: number
+  totalSuccesses: number
+  todayFailures: number
+  totalFailures: number
+  todaySuccessRate: number
+  totalSuccessRate: number
+  todayFailureRate: number
+  totalFailureRate: number
+  requestTrend: DashboardTrend
+  topUsers: DashboardTopUser[]
+}
+
 export interface RechargeRecord {
   id: string
   rechargeNo: string
@@ -82,6 +109,37 @@ export interface RechargeRecordListParams {
 
 export interface UserBalance {
   balance: number
+}
+
+export interface UserProfile {
+  username: string
+  role: 'ADMIN' | 'USER'
+  status: 'ENABLED' | 'DISABLED'
+  totalCalls: number
+  balance: number
+  createdAt: string
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
+}
+
+export interface DailyCheckInStatus {
+  checkedIn: boolean
+}
+
+export interface BalanceChangeRecord {
+  id: string
+  amount: number
+  createdAt: string
+  type: string
+  remark: string | null
+}
+
+export interface BalanceChangeListParams {
+  page: number
+  size: 10 | 20 | 50
 }
 
 export interface Conversation {
@@ -119,6 +177,10 @@ export const adminUserApi = {
     request.post<AdminRechargeResult>(`/admin/users/${userId}/recharges`, payload),
 }
 
+export const adminDashboardApi = {
+  overview: () => request.get<AdminDashboard>('/admin/dashboard'),
+}
+
 export const adminRechargeRecordApi = {
   list: (params: RechargeRecordListParams) =>
     request.get<PageResult<RechargeRecord>>('/admin/recharge-records', { params }),
@@ -126,6 +188,12 @@ export const adminRechargeRecordApi = {
 
 export const userAccountApi = {
   balance: () => request.get<UserBalance>('/user/balance'),
+  profile: () => request.get<UserProfile>('/user/profile'),
+  changePassword: (payload: ChangePasswordPayload) => request.put<void>('/user/password', payload),
+  checkInStatus: () => request.get<DailyCheckInStatus>('/user/check-in/status'),
+  checkIn: () => request.post<void>('/user/check-in'),
+  balanceChanges: (params: BalanceChangeListParams) =>
+    request.get<PageResult<BalanceChangeRecord>>('/user/balance-changes', { params }),
 }
 
 export const chatApi = {

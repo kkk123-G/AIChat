@@ -7,43 +7,26 @@
       </div>
 
       <el-scrollbar class="menu-scrollbar">
-        <el-menu
-          :default-active="activeMenu"
-          :collapse="menuCollapsed"
-          :collapse-transition="false"
-          class="el-menu-vertical"
-          @select="handleMenuSelect"
-        >
-          <el-menu-item
-            v-for="item in accessibleMainMenuItems"
-            :key="item.index"
-            :index="item.index"
-            :disabled="item.disabled"
-          >
+        <el-menu :default-active="activeMenu" :collapse="menuCollapsed" :collapse-transition="false"
+          class="el-menu-vertical" @select="handleMenuSelect">
+          <el-menu-item v-for="item in accessibleMainMenuItems" :key="item.index" :index="item.index"
+            :disabled="item.disabled">
             <el-icon>
               <component :is="item.icon" />
             </el-icon>
-            <template #title
-              ><span class="menu-text">{{ item.title }}</span></template
-            >
+            <template #title><span class="menu-text">{{ item.title }}</span></template>
           </el-menu-item>
 
           <div v-if="isAdmin && accessibleAccountMenuItems.length" class="menu-group-title">
             <span>我的账户</span>
           </div>
 
-          <el-menu-item
-            v-for="item in accessibleAccountMenuItems"
-            :key="item.index"
-            :index="item.index"
-            :disabled="item.disabled"
-          >
+          <el-menu-item v-for="item in accessibleAccountMenuItems" :key="item.index" :index="item.index"
+            :disabled="item.disabled">
             <el-icon>
               <component :is="item.icon" />
             </el-icon>
-            <template #title
-              ><span class="menu-text">{{ item.title }}</span></template
-            >
+            <template #title><span class="menu-text">{{ item.title }}</span></template>
           </el-menu-item>
         </el-menu>
       </el-scrollbar>
@@ -66,27 +49,15 @@
       </div>
     </aside>
 
-    <el-drawer
-      v-else
-      v-model="drawerVisible"
-      direction="ltr"
-      size="260px"
-      :with-header="false"
-      class="mobile-drawer"
-    >
+    <el-drawer v-else v-model="drawerVisible" direction="ltr" size="260px" :with-header="false" class="mobile-drawer">
       <div class="logo-wrapper">
         <img class="logo-image" :src="logoUrl" alt="探索AI" />
         <span class="logo-text">探索AI</span>
       </div>
       <el-scrollbar class="menu-scrollbar">
         <el-menu :default-active="activeMenu" class="el-menu-vertical" @select="handleMenuSelect">
-          <el-menu-item
-            v-for="item in accessibleMainMenuItems"
-            :key="item.index"
-            :index="item.index"
-            :disabled="item.disabled"
-            @click="drawerVisible = false"
-          >
+          <el-menu-item v-for="item in accessibleMainMenuItems" :key="item.index" :index="item.index"
+            :disabled="item.disabled" @click="drawerVisible = false">
             <el-icon>
               <component :is="item.icon" />
             </el-icon>
@@ -97,13 +68,8 @@
             <span>我的账户</span>
           </div>
 
-          <el-menu-item
-            v-for="item in accessibleAccountMenuItems"
-            :key="item.index"
-            :index="item.index"
-            :disabled="item.disabled"
-            @click="drawerVisible = false"
-          >
+          <el-menu-item v-for="item in accessibleAccountMenuItems" :key="item.index" :index="item.index"
+            :disabled="item.disabled" @click="drawerVisible = false">
             <el-icon>
               <component :is="item.icon" />
             </el-icon>
@@ -135,6 +101,10 @@
         </div>
 
         <div class="navbar-right">
+          <el-button class="check-in-button" :class="{ 'is-completed': checkedInToday }" :loading="checkInLoading"
+            :disabled="checkedInToday || checkInLoading" @click="handleCheckIn">
+            {{ checkedInToday ? '今日已签到' : '签到' }}
+          </el-button>
           <div class="balance-box">
             <el-icon class="money-icon">
               <Money />
@@ -178,7 +148,8 @@ import {
   Odometer,
   User,
   Avatar,
-  Document,
+  CreditCard,
+  TrendCharts,
   ChatDotRound,
   Money,
   Expand,
@@ -189,7 +160,7 @@ import {
   DArrowRight,
 } from '@element-plus/icons-vue'
 import logoUrl from '@/assets/logo.png'
-import { authApi, type CurrentUser } from '@/utils/api'
+import { authApi, userAccountApi, type CurrentUser } from '@/utils/api'
 import { MENU_CODES, type MenuCode } from '@/utils/authorization'
 import { clearAccessToken } from '@/utils/auth'
 import { useAccountStore } from '@/stores/account'
@@ -212,19 +183,19 @@ const currentUser = ref<CurrentUser | null>(null)
 const accountStore = useAccountStore()
 const { balance } = storeToRefs(accountStore)
 const logoutLoading = ref(false)
+const checkedInToday = ref(false)
+const checkInLoading = ref(false)
 const screenWidth = ref(window.innerWidth)
 
 const mainMenuItems: MenuItem[] = [
   { code: MENU_CODES.adminDashboard, index: 'admin-dashboard', title: '仪表盘', icon: Odometer },
   { code: MENU_CODES.userManagement, index: 'user-management', title: '用户管理', icon: User },
-  { code: MENU_CODES.usageRecords, index: 'usage-records', title: '使用记录', icon: Document },
-  { code: MENU_CODES.rechargeRecords, index: 'recharge-records', title: '充值记录', icon: Document },
+  { code: MENU_CODES.rechargeRecords, index: 'recharge-records', title: '充值记录', icon: CreditCard },
 ]
 
 const accountMenuItems: MenuItem[] = [
-  { code: MENU_CODES.userDashboard, index: 'user-dashboard', title: '仪表盘', icon: Odometer },
   { code: MENU_CODES.aiChat, index: 'ai-chat', title: 'ai聊天', icon: ChatDotRound },
-  { code: MENU_CODES.balanceChanges, index: 'balance-changes', title: '金额变动', icon: Document, disabled: true },
+  { code: MENU_CODES.balanceChanges, index: 'balance-changes', title: '金额变动', icon: TrendCharts },
   { code: MENU_CODES.userProfile, index: 'user-profile', title: '个人资料', icon: Avatar },
 ]
 
@@ -267,6 +238,30 @@ const loadCurrentUser = async () => {
 
 const loadBalance = async () => {
   await accountStore.refreshBalance()
+}
+
+const loadCheckInStatus = async () => {
+  try {
+    checkedInToday.value = (await userAccountApi.checkInStatus()).checkedIn
+  } catch {
+    checkedInToday.value = false
+  }
+}
+
+const handleCheckIn = async () => {
+  if (checkedInToday.value || checkInLoading.value) return
+
+  checkInLoading.value = true
+  try {
+    await userAccountApi.checkIn()
+    checkedInToday.value = true
+    await accountStore.refreshBalance()
+    ElMessage.success('签到成功')
+  } catch {
+    await loadCheckInStatus()
+  } finally {
+    checkInLoading.value = false
+  }
 }
 
 function filterAccessibleMenus(menuItems: MenuItem[]) {
@@ -338,6 +333,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
   void loadCurrentUser()
   void loadBalance()
+  void loadCheckInStatus()
 })
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
@@ -518,7 +514,7 @@ $navbar-height: 60px;
 .el-menu-vertical {
   border-right: none;
   padding: 0;
-  margin-top: 14px; // 核心修改：拉大最上方“仪表盘”绿色激活区与顶部Logo细横线的间距
+  margin-top: 14px;
   transition:
     width 0.24s ease,
     padding 0.24s ease;
@@ -672,6 +668,30 @@ $navbar-height: 60px;
     display: flex;
     align-items: center;
     gap: 20px;
+
+    .check-in-button {
+      min-width: 72px;
+      height: 32px;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      background-color: #f0fdf4;
+      color: #16a34a;
+      font-weight: 600;
+
+      &:hover:not(:disabled),
+      &:focus-visible:not(:disabled) {
+        border-color: #86efac;
+        background-color: #dcfce7;
+        color: #16a34a;
+      }
+
+      &.is-completed,
+      &:disabled {
+        border-color: #e5e7eb;
+        background-color: #f3f4f6;
+        color: #9ca3af;
+      }
+    }
 
     .balance-box {
       display: flex;

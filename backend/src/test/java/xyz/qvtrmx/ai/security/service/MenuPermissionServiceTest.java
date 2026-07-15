@@ -15,7 +15,6 @@ class MenuPermissionServiceTest {
         List<String> menuCodes = menuPermissionService.accessibleMenuCodes(new AuthenticatedUser(1L, "user", 0));
 
         assertEquals(List.of(
-                MenuPermissionService.USER_DASHBOARD,
                 MenuPermissionService.AI_CHAT,
                 MenuPermissionService.BALANCE_CHANGES,
                 MenuPermissionService.USER_PROFILE
@@ -29,9 +28,7 @@ class MenuPermissionServiceTest {
         assertEquals(List.of(
                 MenuPermissionService.ADMIN_DASHBOARD,
                 MenuPermissionService.USER_MANAGEMENT,
-                MenuPermissionService.USAGE_RECORDS,
                 MenuPermissionService.RECHARGE_RECORDS,
-                MenuPermissionService.USER_DASHBOARD,
                 MenuPermissionService.AI_CHAT,
                 MenuPermissionService.BALANCE_CHANGES,
                 MenuPermissionService.USER_PROFILE

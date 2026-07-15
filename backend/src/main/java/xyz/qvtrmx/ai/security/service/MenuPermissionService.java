@@ -10,15 +10,12 @@ public class MenuPermissionService {
 
     public static final String ADMIN_DASHBOARD = "admin-dashboard";
     public static final String USER_MANAGEMENT = "user-management";
-    public static final String USAGE_RECORDS = "usage-records";
     public static final String RECHARGE_RECORDS = "recharge-records";
-    public static final String USER_DASHBOARD = "user-dashboard";
     public static final String AI_CHAT = "ai-chat";
     public static final String BALANCE_CHANGES = "balance-changes";
     public static final String USER_PROFILE = "user-profile";
 
     private static final List<String> USER_MENUS = List.of(
-            USER_DASHBOARD,
             AI_CHAT,
             BALANCE_CHANGES,
             USER_PROFILE
@@ -26,9 +23,7 @@ public class MenuPermissionService {
     private static final List<String> ADMIN_MENUS = List.of(
             ADMIN_DASHBOARD,
             USER_MANAGEMENT,
-            USAGE_RECORDS,
             RECHARGE_RECORDS,
-            USER_DASHBOARD,
             AI_CHAT,
             BALANCE_CHANGES,
             USER_PROFILE

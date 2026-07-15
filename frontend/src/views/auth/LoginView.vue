@@ -40,7 +40,7 @@ import { onMounted, ref, reactive } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '@/utils/api'
-import { defaultDashboardRouteName } from '@/utils/authorization'
+import { defaultConsoleRouteName } from '@/utils/authorization'
 import { clearAccessToken, setAccessToken } from '@/utils/auth'
 import logoUrl from '@/assets/logo.png'
 
@@ -99,7 +99,7 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
       throw error
     }
     ElMessage.success('登录成功')
-    await router.replace({ name: defaultDashboardRouteName(currentUser.menuCodes) })
+    await router.replace({ name: defaultConsoleRouteName(currentUser.menuCodes) })
   } finally {
     loading.value = false
   }
