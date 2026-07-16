@@ -58,7 +58,7 @@
           <el-table-column label="状态" min-width="86">
             <template #default="scope">
               <div class="status-cell">
-                <span class="status-dot"></span>
+                <span class="status-dot" :class="{ 'is-disabled': scope.row.status === '禁用' }"></span>
                 <span>{{ scope.row.status }}</span>
               </div>
             </template>
@@ -76,24 +76,32 @@
           <el-table-column label="操作" min-width="124" fixed="right">
             <template #default="scope">
               <div class="opera-actions">
-                <el-link type="primary" :underlined="false">
+                <el-link v-if="canChangeUserStatus(scope.row)" :type="scope.row.status === '启用' ? 'danger' : 'primary'"
+                  :underlined="false" @click="toggleUserStatus(scope.row)">
                   <el-icon>
-                    <EditPen />
+                    <component :is="scope.row.status === '启用' ? CircleClose : CircleCheck" />
                   </el-icon>
-                  编辑
+                  {{ scope.row.status === '启用' ? '禁用' : '启用' }}
                 </el-link>
-                <el-link v-if="scope.row.id !== '1'" type="danger" :underlined="false">
-                  <el-icon>
-                    <CircleClose />
-                  </el-icon>
-                  禁用
-                </el-link>
-                <el-link type="info" :underlined="false">
-                  <el-icon>
-                    <MoreFilled />
-                  </el-icon>
-                  更多
-                </el-link>
+                <el-dropdown trigger="click" placement="bottom-end" popper-class="more-action-dropdown"
+                  @command="handleMoreAction(scope.row, $event)">
+                  <el-link type="info" :underlined="false">
+                    <el-icon>
+                      <MoreFilled />
+                    </el-icon>
+                    更多
+                  </el-link>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="recharge"><el-icon>
+                          <Coin />
+                        </el-icon>充值</el-dropdown-item>
+                      <el-dropdown-item command="refund"><el-icon>
+                          <RefreshLeft />
+                        </el-icon>退款</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
               </div>
             </template>
           </el-table-column>
@@ -122,7 +130,7 @@
             <div class="info-row">
               <span class="label">状态:</span>
               <div class="status-cell">
-                <span class="status-dot"></span>
+                <span class="status-dot" :class="{ 'is-disabled': item.status === '禁用' }"></span>
                 <span>{{ item.status }}</span>
               </div>
             </div>
@@ -137,15 +145,29 @@
             </div>
           </div>
           <div class="card-footer">
-            <el-button link type="primary"><el-icon>
-                <EditPen />
-              </el-icon>编辑</el-button>
-            <el-button v-if="item.id !== '1'" link type="danger"><el-icon>
-                <CircleClose />
-              </el-icon>禁用</el-button>
-            <el-button link type="info"><el-icon>
-                <MoreFilled />
-              </el-icon>更多</el-button>
+            <el-button v-if="canChangeUserStatus(item)" link :type="item.status === '启用' ? 'danger' : 'primary'"
+              @click="toggleUserStatus(item)">
+              <el-icon>
+                <component :is="item.status === '启用' ? CircleClose : CircleCheck" />
+              </el-icon>
+              {{ item.status === '启用' ? '禁用' : '启用' }}
+            </el-button>
+            <el-dropdown trigger="click" placement="bottom-end" popper-class="more-action-dropdown"
+              @command="handleMoreAction(item, $event)">
+              <el-button link type="info"><el-icon>
+                  <MoreFilled />
+                </el-icon>更多</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="recharge"><el-icon>
+                      <Coin />
+                    </el-icon>充值</el-dropdown-item>
+                  <el-dropdown-item command="refund"><el-icon>
+                      <RefreshLeft />
+                    </el-icon>退款</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </div>
       </div>
@@ -202,13 +224,51 @@
       </span>
     </template>
   </el-dialog>
+
+  <el-dialog v-model="refundDialogVisible" title="退款" width="384px" class="recharge-custom-dialog" align-center
+    @closed="resetRefundForm">
+    <div class="recharge-content">
+      <div class="user-info-card">
+        <el-avatar :size="42" class="user-avatar">
+          {{ currentRefundUser?.account?.slice(0, 2).toUpperCase() || 'U' }}
+        </el-avatar>
+        <div class="info-text">
+          <div class="account">{{ currentRefundUser?.account || '未知账户' }}</div>
+          <div class="balance">当前余额: ￥{{ currentRefundUser?.balance || '0.00' }}</div>
+        </div>
+      </div>
+
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item label="退款金额">
+          <el-input v-model="refundForm.amount" placeholder="0" inputmode="decimal" class="custom-input"
+            @input="sanitizeRefundAmount">
+            <template #prefix><span class="currency-prefix">￥</span></template>
+            <template #suffix><el-button text class="refund-all-button"
+                @click="fillRefundAmount">全部</el-button></template>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item label="备注">
+          <el-input v-model="refundForm.remark" type="textarea" :rows="3" resize="none" maxlength="200"
+            class="custom-textarea" />
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button class="btn-cancel" @click="refundDialogVisible = false">取消</el-button>
+        <el-button class="btn-confirm" type="primary" :loading="refundSubmitting" @click="submitRefund">确认</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { CircleClose, EditPen, MoreFilled, Refresh, Search } from '@element-plus/icons-vue'
-import { adminUserApi, type AdminUser } from '@/utils/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { CircleCheck, CircleClose, Coin, MoreFilled, Refresh, RefreshLeft, Search } from '@element-plus/icons-vue'
+import { adminUserApi, authApi, type AdminUser } from '@/utils/api'
 import { useAccountStore } from '@/stores/account'
 
 const searchQuery = ref('')
@@ -221,7 +281,7 @@ interface UserItem {
   role: string
   roleType: 'user' | 'admin'
   balance: string
-  status: string
+  status: '启用' | '禁用'
   lastActive: string
   lastUsed: string
   createTime: string
@@ -229,6 +289,7 @@ interface UserItem {
 
 const tableData = ref<UserItem[]>([])
 const loading = ref(false)
+const currentUserId = ref<string | null>(null)
 const accountStore = useAccountStore()
 
 const pageStart = computed(() => (total.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
@@ -289,9 +350,51 @@ function formatDateTime(value: string | null) {
 
 onMounted(() => {
   void loadUsers()
+  void loadCurrentUser()
 })
 
-// 充值弹窗逻辑
+async function loadCurrentUser() {
+  try {
+    currentUserId.value = String((await authApi.currentUser()).id)
+  } catch {
+    currentUserId.value = null
+  }
+}
+
+function canChangeUserStatus(user: UserItem) {
+  return user.id !== currentUserId.value
+}
+
+async function toggleUserStatus(user: UserItem) {
+  const enabled = user.status === '禁用'
+  const action = enabled ? '启用' : '禁用'
+  try {
+    await ElMessageBox.confirm(`确定要${action}账号“${user.account}”吗？`, `${action}账号`, {
+      confirmButtonText: action,
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+
+  try {
+    await adminUserApi.updateStatus(user.id, { enabled })
+    ElMessage.success(`账号已${action}`)
+    await loadUsers()
+  } catch {
+    // The shared request handler displays the server error message.
+  }
+}
+
+function handleMoreAction(user: UserItem, command: unknown) {
+  if (command === 'recharge') {
+    openRechargeDialog(user)
+  } else if (command === 'refund') {
+    openRefundDialog(user)
+  }
+}
+
 const rechargeDialogVisible = ref(false)
 const currentRechargeUser = ref<UserItem | null>(null)
 const rechargeSubmitting = ref(false)
@@ -301,7 +404,6 @@ const rechargeForm = reactive({
   remark: ''
 })
 
-// 打开弹窗并回显数据
 function openRechargeDialog(user: UserItem) {
   currentRechargeUser.value = user
   resetRechargeForm()
@@ -345,10 +447,69 @@ async function submitRecharge() {
     rechargeSubmitting.value = false
   }
 }
+
+const refundDialogVisible = ref(false)
+const currentRefundUser = ref<UserItem | null>(null)
+const refundSubmitting = ref(false)
+const refundForm = reactive({
+  amount: '',
+  remark: ''
+})
+
+function openRefundDialog(user: UserItem) {
+  currentRefundUser.value = user
+  resetRefundForm()
+  refundDialogVisible.value = true
+}
+
+function sanitizeRefundAmount(value: string) {
+  const normalized = value.replace(/[^\d.]/g, '')
+  const [integerPart = '', ...decimalParts] = normalized.split('.')
+  const decimalPart = decimalParts.join('').slice(0, 2)
+  const integer = integerPart || (normalized.startsWith('.') ? '0' : '')
+  refundForm.amount = decimalParts.length > 0 ? `${integer}.${decimalPart}` : integer
+}
+
+function fillRefundAmount() {
+  refundForm.amount = currentRefundUser.value?.balance || ''
+}
+
+function resetRefundForm() {
+  refundForm.amount = ''
+  refundForm.remark = ''
+}
+
+async function submitRefund() {
+  const user = currentRefundUser.value
+  const amount = refundForm.amount
+  if (!user || refundSubmitting.value) return
+  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) {
+    ElMessage.warning('请输入大于 0 的有效退款金额')
+    return
+  }
+  if (Number(amount) > Number(user.balance)) {
+    ElMessage.warning('退款金额不能超过当前余额')
+    return
+  }
+
+  refundSubmitting.value = true
+  try {
+    const result = await adminUserApi.refund(user.id, {
+      amount,
+      remark: refundForm.remark.trim() || undefined,
+    })
+    user.balance = Number(result.balance).toFixed(2)
+    ElMessage.success('退款成功')
+    refundDialogVisible.value = false
+    await accountStore.refreshBalance()
+    await loadUsers()
+  } finally {
+    refundSubmitting.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
-// 基础变量与高保真主色调
 $primary-color: var(--app-primary);
 $bg-color: var(--app-bg);
 $text-main: var(--app-text);
@@ -388,7 +549,6 @@ $border-color: var(--app-border-muted);
     padding: 14px 20px;
   }
 
-  // 顶部操作栏高保真还原
   .top-bar {
     display: flex;
     justify-content: space-between;
@@ -399,7 +559,7 @@ $border-color: var(--app-border-muted);
       width: 240px;
 
       :deep(.el-input__wrapper) {
-        border-radius: 20px; // 圆角搜索框
+        border-radius: 20px; 
         background-color: var(--app-surface-muted);
         border: none;
         box-shadow: none;
@@ -426,7 +586,6 @@ $border-color: var(--app-border-muted);
     }
   }
 
-  // 网页端表格样式定制
   .table-wrapper {
     flex: 1;
     min-height: 0;
@@ -437,8 +596,8 @@ $border-color: var(--app-border-muted);
       color: $text-main;
 
       :deep(th.el-table__cell) {
-      background-color: var(--app-surface-subtle);
-      color: var(--app-text-regular);
+        background-color: var(--app-surface-subtle);
+        color: var(--app-text-regular);
         font-weight: 600;
         border-bottom: 1px solid $border-color;
       }
@@ -454,7 +613,6 @@ $border-color: var(--app-border-muted);
     }
   }
 
-  // 账号列头像与布局
   .account-cell {
     display: flex;
     align-items: center;
@@ -472,7 +630,6 @@ $border-color: var(--app-border-muted);
     }
   }
 
-  // 角色和状态标签还原
   .role-tag {
     display: inline-block;
     padding: 1px 6px;
@@ -532,8 +689,11 @@ $border-color: var(--app-border-muted);
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background-color: #10b981; // 绿色的启用状态点
+      background-color: #10b981;
 
+      &.is-disabled {
+        background-color: #ef4444;
+      }
     }
   }
 
@@ -550,7 +710,6 @@ $border-color: var(--app-border-muted);
     }
   }
 
-  // H5 响应式卡片流布局 (仅在移动端尺寸下显示)
   .card-wrapper {
     display: flex;
     flex: 1;
@@ -608,7 +767,6 @@ $border-color: var(--app-border-muted);
     }
   }
 
-  // 底部底栏与分页区
   .pagination-container {
     display: flex;
     justify-content: space-between;
@@ -640,7 +798,6 @@ $border-color: var(--app-border-muted);
   }
 }
 
-// 针对移动端极端小屏幕的显示切换 (使用 Element 官方自带响应式断点类名)
 @media (max-width: 768px) {
   .hidden-xs-only {
     display: none !important;
@@ -658,7 +815,7 @@ $border-color: var(--app-border-muted);
     }
 
     .top-bar .search-input {
-      width: 100%; // 移动端搜索框撑满
+      width: 100%; 
     }
 
     .pagination-container {
@@ -682,13 +839,39 @@ $border-color: var(--app-border-muted);
 
 
 <style lang="scss">
-/* --- 将弹窗样式提取为非 scoped，解决 el-dialog 挂载在 body 导致样式失效的问题 --- */
+.more-action-dropdown {
+  min-width: 116px;
+  padding: 4px;
+
+  .el-dropdown-menu {
+    padding: 0;
+  }
+
+  .el-dropdown-menu__item {
+    display: flex;
+    min-width: 108px;
+    align-items: center;
+    gap: 8px;
+    border-radius: 4px;
+    color: #334155;
+
+    .el-icon {
+      color: #0f766e;
+      font-size: 16px;
+    }
+
+    &:hover,
+    &:focus {
+      background: #f0fdf4;
+      color: #0f766e;
+    }
+  }
+}
+
 .recharge-custom-dialog {
   border-radius: 16px !important;
-  /* 匹配图二的大圆角 */
   overflow: hidden;
 
-  /* 弹窗头部 */
   .el-dialog__header {
     padding: 18px 24px 16px;
     margin-right: 0;
@@ -707,12 +890,10 @@ $border-color: var(--app-border-muted);
     }
   }
 
-  /* 弹窗内容区 */
   .el-dialog__body {
     padding: 16px 24px 18px;
   }
 
-  /* 用户信息卡片 (匹配图二浅色背景与横向布局) */
   .user-info-card {
     display: flex;
     align-items: center;
@@ -744,7 +925,6 @@ $border-color: var(--app-border-muted);
     }
   }
 
-  /* 表单样式 (匹配图二的大圆角输入框) */
   .el-form-item {
     margin-bottom: 16px;
 
@@ -799,6 +979,19 @@ $border-color: var(--app-border-muted);
     margin-right: -3px;
   }
 
+  .refund-all-button {
+    min-height: 24px;
+    padding: 0 2px;
+    color: #0f766e;
+    font-size: 13px;
+    font-weight: 600;
+
+    &:hover,
+    &:focus-visible {
+      color: #047857;
+    }
+  }
+
   .custom-input .currency-prefix {
     position: relative;
     top: -2px;
@@ -816,7 +1009,6 @@ $border-color: var(--app-border-muted);
     font-size: 14px;
   }
 
-  /* 底部按钮区 (匹配图二的圆角与自定义绿色按钮) */
   .el-dialog__footer {
     padding: 12px 24px 16px;
 
@@ -843,22 +1035,20 @@ $border-color: var(--app-border-muted);
         }
       }
 
-      /* 增加权重覆盖 Element Plus 默认的 Primary 蓝色 */
       .btn-confirm.el-button--primary {
-        background-color: #82cca9;
-        border-color: #82cca9;
+        background-color: #0f766e;
+        border-color: #0f766e;
         color: #fff;
 
         &:hover {
-          background-color: #6eb795;
-          border-color: #6eb795;
+          background-color: #115e59;
+          border-color: #115e59;
         }
       }
     }
   }
 }
 
-/* 响应式适配 */
 @media (max-width: 768px) {
   .recharge-custom-dialog {
     width: 92% !important;

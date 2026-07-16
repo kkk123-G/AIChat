@@ -3,11 +3,12 @@ package xyz.qvtrmx.ai.admin.vo;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record RechargeRecordResponse(
+public record RechargeRefundRecordResponse(
         String id,
-        String rechargeNo,
+        String operationNo,
         String username,
         BigDecimal amount,
+        String operationType,
         BigDecimal balanceBefore,
         BigDecimal balanceAfter,
         String remark,

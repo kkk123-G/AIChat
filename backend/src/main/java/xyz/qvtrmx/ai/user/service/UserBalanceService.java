@@ -37,6 +37,11 @@ public class UserBalanceService {
     }
 
     @Transactional
+    public BalanceChange refund(Long userId, BigDecimal amount, String remark) {
+        return changeBalance(userId, amount.negate(), "ADMIN_REFUND", null, remark, false);
+    }
+
+    @Transactional
     public BalanceChange chargeAiChat(Long userId, Long userMessageId) {
         return changeBalance(userId, AI_CHAT_FEE.negate(), "AI_CHAT_CONSUMPTION", userMessageId, "AI聊天消耗了1元", true);
     }
@@ -135,6 +140,7 @@ public class UserBalanceService {
     private String displayType(String changeType) {
         return switch (changeType) {
             case "ADMIN_RECHARGE", "RECHARGE" -> "管理员充值";
+            case "ADMIN_REFUND" -> "管理员退款";
             case "DAILY_CHECK_IN" -> "签到奖励";
             case "AI_CHAT", "AI_CHAT_CONSUMPTION" -> "AI聊天消耗";
             case "AI_CHAT_REFUND" -> "AI聊天退款";

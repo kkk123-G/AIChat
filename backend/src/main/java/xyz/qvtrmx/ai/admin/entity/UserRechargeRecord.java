@@ -16,6 +16,7 @@ public class UserRechargeRecord {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
     private String rechargeNo;
+    private String operationType;
     private Long userId;
     private Long operatorId;
     private BigDecimal amount;

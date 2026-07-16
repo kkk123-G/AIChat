@@ -63,6 +63,20 @@ export interface AdminRechargeResult {
   balance: number
 }
 
+export interface AdminRefundPayload {
+  amount: string
+  remark?: string
+}
+
+export interface AdminBalanceAdjustmentResult {
+  userId: number
+  balance: number
+}
+
+export interface AdminUserStatusPayload {
+  enabled: boolean
+}
+
 export interface DashboardTrend {
   labels: string[]
   values: number[]
@@ -90,11 +104,12 @@ export interface AdminDashboard {
   topUsers: DashboardTopUser[]
 }
 
-export interface RechargeRecord {
+export interface RechargeRefundRecord {
   id: string
-  rechargeNo: string
+  operationNo: string
   username: string
   amount: number
+  operationType: 'RECHARGE' | 'REFUND'
   balanceBefore: number
   balanceAfter: number
   remark: string | null
@@ -102,7 +117,7 @@ export interface RechargeRecord {
   createdAt: string
 }
 
-export interface RechargeRecordListParams {
+export interface RechargeRefundRecordListParams {
   page: number
   size: 10 | 20 | 50
 }
@@ -175,15 +190,19 @@ export const adminUserApi = {
   list: (params: AdminUserListParams) => request.get<PageResult<AdminUser>>('/admin/users', { params }),
   recharge: (userId: string, payload: AdminRechargePayload) =>
     request.post<AdminRechargeResult>(`/admin/users/${userId}/recharges`, payload),
+  refund: (userId: string, payload: AdminRefundPayload) =>
+    request.post<AdminBalanceAdjustmentResult>(`/admin/users/${userId}/refunds`, payload),
+  updateStatus: (userId: string, payload: AdminUserStatusPayload) =>
+    request.put<void>(`/admin/users/${userId}/status`, payload),
 }
 
 export const adminDashboardApi = {
   overview: () => request.get<AdminDashboard>('/admin/dashboard'),
 }
 
-export const adminRechargeRecordApi = {
-  list: (params: RechargeRecordListParams) =>
-    request.get<PageResult<RechargeRecord>>('/admin/recharge-records', { params }),
+export const adminRechargeRefundRecordApi = {
+  list: (params: RechargeRefundRecordListParams) =>
+    request.get<PageResult<RechargeRefundRecord>>('/admin/recharge-refund-records', { params }),
 }
 
 export const userAccountApi = {

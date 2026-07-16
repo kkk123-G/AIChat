@@ -11,7 +11,8 @@
 
           <el-table-column label="变动状态" min-width="130">
             <template #default="scope">
-              <span class="change-status" :class="amountClass(scope.row.amount)">{{ changeStatus(scope.row.amount) }}</span>
+              <span class="change-status" :class="amountClass(scope.row.amount)">{{ changeStatus(scope.row.amount)
+                }}</span>
             </template>
           </el-table-column>
 
@@ -39,9 +40,12 @@
           </div>
 
           <div class="card-body">
-            <div class="info-row"><span class="label">变动状态</span><span class="change-status" :class="amountClass(record.amount)">{{ changeStatus(record.amount) }}</span></div>
-            <div class="info-row"><span class="label">时间</span><span class="value">{{ formatDateTime(record.createdAt) }}</span></div>
-            <div class="info-row"><span class="label">备注</span><span class="value">{{ record.remark || '-' }}</span></div>
+            <div class="info-row"><span class="label">变动状态</span><span class="change-status"
+                :class="amountClass(record.amount)">{{ changeStatus(record.amount) }}</span></div>
+            <div class="info-row"><span class="label">时间</span><span class="value">{{ formatDateTime(record.createdAt)
+                }}</span></div>
+            <div class="info-row"><span class="label">备注</span><span class="value">{{ record.remark || '-' }}</span>
+            </div>
           </div>
         </article>
       </div>
@@ -51,22 +55,11 @@
       <div class="pagination-container">
         <div class="pagination-summary">
           <span class="total-text hidden-xs-only">显示 {{ pageStart }} 至 {{ pageEnd }}，共 {{ total }} 条记录</span>
-          <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50]"
-            :total="total"
-            layout="sizes"
-            @size-change="handleSizeChange"
-          />
+          <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+            :total="total" layout="sizes" @size-change="handleSizeChange" />
         </div>
-        <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="total"
-          layout="prev, pager, next"
-          @current-change="handleCurrentChange"
-        />
+        <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="total"
+          layout="prev, pager, next" @current-change="handleCurrentChange" />
       </div>
     </section>
   </div>

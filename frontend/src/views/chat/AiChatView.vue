@@ -6,45 +6,42 @@
       <div class="sidebar-header">
         <div class="sidebar-actions">
           <el-button class="new-chat-btn" plain :disabled="isGenerating" @click="handleNewChat">
-            <el-icon><Plus /></el-icon>
+            <el-icon>
+              <Plus />
+            </el-icon>
             新对话
           </el-button>
           <el-tooltip content="搜索聊天记录" placement="bottom">
             <el-button class="search-trigger" text circle aria-label="搜索聊天记录" @click="openSearchDialog">
-              <el-icon><Search /></el-icon>
+              <el-icon>
+                <Search />
+              </el-icon>
             </el-button>
           </el-tooltip>
         </div>
       </div>
 
       <nav v-loading="loadingConversations" class="session-list">
-        <div
-          v-for="session in sessions"
-          :key="session.id"
-          class="session-item"
-          :class="{ 'is-active': session.id === activeSessionId }"
-        >
+        <div v-for="session in sessions" :key="session.id" class="session-item"
+          :class="{ 'is-active': session.id === activeSessionId }">
           <button class="session-select" :disabled="isGenerating" @click="selectSession(session.id)">
             <span class="session-title">{{ session.title }}</span>
           </button>
           <el-tooltip content="删除会话" placement="right">
-            <el-button
-              class="session-delete"
-              text
-              circle
-              aria-label="删除会话"
-              :loading="deletingSessionId === session.id"
-              :disabled="isGenerating || deletingSessionId !== null"
-              @click.stop="deleteSession(session.id)"
-            >
-              <el-icon><Delete /></el-icon>
+            <el-button class="session-delete" text circle aria-label="删除会话" :loading="deletingSessionId === session.id"
+              :disabled="isGenerating || deletingSessionId !== null" @click.stop="deleteSession(session.id)">
+              <el-icon>
+                <Delete />
+              </el-icon>
             </el-button>
           </el-tooltip>
         </div>
         <div v-if="!loadingConversations && sessions.length === 0" class="empty-session-state">
           <el-empty description="暂无历史对话">
             <template #image>
-              <el-icon class="empty-session-icon"><ChatDotRound /></el-icon>
+              <el-icon class="empty-session-icon">
+                <ChatDotRound />
+              </el-icon>
             </template>
           </el-empty>
         </div>
@@ -52,45 +49,36 @@
     </aside>
 
     <el-dialog v-model="searchDialogVisible" title="搜索聊天记录" width="560px" class="search-dialog" @closed="resetSearch">
-      <el-input
-        ref="searchInputRef"
-        v-model="searchKeyword"
-        placeholder="搜索会话标题或消息内容"
-        clearable
-        class="search-dialog-input"
-        @input="scheduleSearch"
-        @keyup.enter="searchConversations"
-      >
+      <el-input ref="searchInputRef" v-model="searchKeyword" placeholder="搜索会话标题或消息内容" clearable
+        class="search-dialog-input" @input="scheduleSearch" @keyup.enter="searchConversations">
         <template #append>
           <el-button :loading="searching" aria-label="搜索" @click="searchConversations">
-            <el-icon><Search /></el-icon>
+            <el-icon>
+              <Search />
+            </el-icon>
           </el-button>
         </template>
       </el-input>
 
       <div v-loading="searching" class="search-result-list">
-        <button
-          v-for="conversation in searchResults"
-          :key="conversation.id"
-          class="search-result-item"
-          :disabled="isGenerating"
-          @click="selectSearchResult(conversation)"
-        >
+        <button v-for="conversation in searchResults" :key="conversation.id" class="search-result-item"
+          :disabled="isGenerating" @click="selectSearchResult(conversation)">
           <span class="search-result-title">{{ conversation.title }}</span>
-          <span class="search-result-time">{{ formatConversationTime(conversation.lastMessageAt || conversation.createdAt) }}</span>
+          <span class="search-result-time">{{ formatConversationTime(conversation.lastMessageAt ||
+            conversation.createdAt)
+            }}</span>
         </button>
-        <el-empty
-          v-if="searchKeyword.trim() && !searching && searchResults.length === 0"
-          :image-size="72"
-          description="未找到匹配的聊天记录"
-        />
+        <el-empty v-if="searchKeyword.trim() && !searching && searchResults.length === 0" :image-size="72"
+          description="未找到匹配的聊天记录" />
       </div>
     </el-dialog>
 
     <section class="chat-container" :class="{ 'is-draft': isDraftConversation }">
       <header class="chat-header">
         <el-button class="menu-toggle-btn" text circle aria-label="打开聊天列表" @click="isMobileSidebarOpen = true">
-          <el-icon><Expand /></el-icon>
+          <el-icon>
+            <Expand />
+          </el-icon>
         </el-button>
         <h1 class="title">{{ activeSession?.title || '新对话' }}</h1>
       </header>
@@ -99,12 +87,8 @@
 
       <main ref="chatMainRef" v-loading="loadingMessages" class="chat-main">
         <el-empty v-if="activeSession && !loadingMessages && displayedMessages.length === 0" description="暂无聊天消息" />
-        <article
-          v-for="message in displayedMessages"
-          :key="message.id"
-          class="message-row"
-          :class="`is-${message.role}`"
-        >
+        <article v-for="message in displayedMessages" :key="message.id" class="message-row"
+          :class="`is-${message.role}`">
           <el-avatar class="avatar" :size="34">{{ message.role === 'user' ? '我' : 'AI' }}</el-avatar>
           <div class="message-bubble">
             <p v-if="message.role === 'user'" class="content">{{ message.content }}</p>
@@ -116,30 +100,19 @@
 
       <footer class="chat-footer" :class="{ 'is-draft': isDraftConversation }">
         <div class="input-wrapper">
-          <el-input
-            ref="chatInputRef"
-            v-model="inputText"
-            type="textarea"
-            :autosize="{ minRows: 1, maxRows: 6 }"
-            resize="none"
-            placeholder="输入消息，Enter 发送，Shift + Enter 换行"
-            class="chat-input"
-            :disabled="isGenerating"
-            @keydown.enter.exact.prevent="handleSend"
-          />
-          <el-button
-            v-if="!isGenerating"
-            type="primary"
-            circle
-            class="send-btn"
-            aria-label="发送消息"
-            :disabled="!inputText.trim()"
-            @click="handleSend"
-          >
-            <el-icon><Promotion /></el-icon>
+          <el-input ref="chatInputRef" v-model="inputText" type="textarea" :autosize="{ minRows: 1, maxRows: 6 }"
+            resize="none" placeholder="输入消息，Enter 发送，Shift + Enter 换行" class="chat-input" :disabled="isGenerating"
+            @keydown.enter.exact.prevent="handleSend" />
+          <el-button v-if="!isGenerating" type="primary" circle class="send-btn" aria-label="发送消息"
+            :disabled="!inputText.trim()" @click="handleSend">
+            <el-icon>
+              <Promotion />
+            </el-icon>
           </el-button>
           <el-button v-else type="danger" circle plain class="stop-btn" aria-label="停止生成" @click="stopGeneration">
-            <el-icon><VideoPause /></el-icon>
+            <el-icon>
+              <VideoPause />
+            </el-icon>
           </el-button>
         </div>
       </footer>

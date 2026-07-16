@@ -17,14 +17,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import xyz.qvtrmx.ai.security.jwt.JwtService;
 import xyz.qvtrmx.ai.security.model.AuthenticatedUser;
 import xyz.qvtrmx.ai.security.model.UserRole;
+import xyz.qvtrmx.ai.user.entity.User;
+import xyz.qvtrmx.ai.user.mapper.UserMapper;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserMapper userMapper;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, UserMapper userMapper) {
         this.jwtService = jwtService;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -40,6 +44,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 AuthenticatedUser user = jwtService.parseAccessToken(authorization.substring(7));
+                if (!isActiveUser(user.id())) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         user,
                         null,
@@ -52,5 +61,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isActiveUser(Long userId) {
+        User user = userMapper.selectById(userId);
+        return user != null && user.getDeleted() == 0 && user.getStatus() == 1;
     }
 }

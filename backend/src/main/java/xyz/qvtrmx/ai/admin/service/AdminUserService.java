@@ -14,10 +14,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import xyz.qvtrmx.ai.admin.dto.RechargeUserRequest;
+import xyz.qvtrmx.ai.admin.dto.RefundUserRequest;
+import xyz.qvtrmx.ai.admin.dto.UpdateUserStatusRequest;
 import xyz.qvtrmx.ai.admin.entity.UserRechargeRecord;
 import xyz.qvtrmx.ai.admin.mapper.UserRechargeRecordMapper;
 import xyz.qvtrmx.ai.admin.vo.AdminUserResponse;
-import xyz.qvtrmx.ai.admin.vo.RechargeRecordResponse;
+import xyz.qvtrmx.ai.admin.vo.BalanceAdjustmentResponse;
+import xyz.qvtrmx.ai.admin.vo.RechargeRefundRecordResponse;
 import xyz.qvtrmx.ai.admin.vo.RechargeUserResponse;
 import xyz.qvtrmx.ai.common.api.PageResponse;
 import xyz.qvtrmx.ai.common.exception.BusinessException;
@@ -63,7 +66,7 @@ public class AdminUserService {
         return new PageResponse<>(records, page.getTotal(), page.getCurrent(), page.getSize(), page.getPages());
     }
 
-    public PageResponse<RechargeRecordResponse> listRechargeRecords(
+    public PageResponse<RechargeRefundRecordResponse> listRechargeRefundRecords(
             long pageNumber,
             long pageSize,
             AuthenticatedUser operator
@@ -78,8 +81,8 @@ public class AdminUserService {
                         .orderByDesc(UserRechargeRecord::getId)
         );
         Map<Long, User> usersById = loadUsersById(page.getRecords());
-        List<RechargeRecordResponse> records = page.getRecords().stream()
-                .map(record -> toRechargeRecordResponse(record, usersById))
+        List<RechargeRefundRecordResponse> records = page.getRecords().stream()
+                .map(record -> toRechargeRefundRecordResponse(record, usersById))
                 .toList();
         return new PageResponse<>(records, page.getTotal(), page.getCurrent(), page.getSize(), page.getPages());
     }
@@ -91,17 +94,33 @@ public class AdminUserService {
         String remark = StringUtils.hasText(request.remark()) ? request.remark().trim() : null;
         UserBalanceService.BalanceChange balanceChange = userBalanceService.recharge(userId, request.amount(), remark);
 
-        UserRechargeRecord record = new UserRechargeRecord();
-        record.setId(IdWorker.getId());
-        record.setRechargeNo("RC" + record.getId());
-        record.setUserId(userId);
-        record.setOperatorId(operator.id());
-        record.setAmount(request.amount());
-        record.setBalanceBefore(balanceChange.balanceBefore());
-        record.setBalanceAfter(balanceChange.balanceAfter());
-        record.setRemark(remark);
-        userRechargeRecordMapper.insert(record);
+        createOperationRecord(userId, operator.id(), request.amount(), balanceChange, remark, "RECHARGE", "RC");
         return new RechargeUserResponse(userId, balanceChange.balanceAfter());
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public BalanceAdjustmentResponse refundUser(Long userId, RefundUserRequest request, AuthenticatedUser operator) {
+        requireAdministrator(operator);
+
+        String remark = StringUtils.hasText(request.remark()) ? request.remark().trim() : null;
+        UserBalanceService.BalanceChange balanceChange = userBalanceService.refund(userId, request.amount(), remark);
+        createOperationRecord(userId, operator.id(), request.amount(), balanceChange, remark, "REFUND", "RF");
+        return new BalanceAdjustmentResponse(userId, balanceChange.balanceAfter());
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void updateUserStatus(Long userId, UpdateUserStatusRequest request, AuthenticatedUser operator) {
+        requireAdministrator(operator);
+        if (operator.id().equals(userId)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "You cannot change your own account status");
+        }
+
+        User user = userMapper.selectById(userId);
+        if (user == null || user.getDeleted() == 1) {
+            throw new BusinessException(HttpStatus.NOT_FOUND, "User was not found");
+        }
+        user.setStatus(request.enabled() ? ENABLED_STATUS : 0);
+        userMapper.updateById(user);
     }
 
     private void validatePageArguments(long pageNumber, long pageSize) {
@@ -132,14 +151,37 @@ public class AdminUserService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
-    private RechargeRecordResponse toRechargeRecordResponse(UserRechargeRecord record, Map<Long, User> usersById) {
+    private void createOperationRecord(
+            Long userId,
+            Long operatorId,
+            BigDecimal amount,
+            UserBalanceService.BalanceChange balanceChange,
+            String remark,
+            String operationType,
+            String numberPrefix
+    ) {
+        UserRechargeRecord record = new UserRechargeRecord();
+        record.setId(IdWorker.getId());
+        record.setRechargeNo(numberPrefix + record.getId());
+        record.setOperationType(operationType);
+        record.setUserId(userId);
+        record.setOperatorId(operatorId);
+        record.setAmount(amount);
+        record.setBalanceBefore(balanceChange.balanceBefore());
+        record.setBalanceAfter(balanceChange.balanceAfter());
+        record.setRemark(remark);
+        userRechargeRecordMapper.insert(record);
+    }
+
+    private RechargeRefundRecordResponse toRechargeRefundRecordResponse(UserRechargeRecord record, Map<Long, User> usersById) {
         User recipient = usersById.get(record.getUserId());
         User operator = usersById.get(record.getOperatorId());
-        return new RechargeRecordResponse(
+        return new RechargeRefundRecordResponse(
                 String.valueOf(record.getId()),
                 record.getRechargeNo(),
                 recipient == null ? "Deleted user" : recipient.getUsername(),
                 record.getAmount(),
+                record.getOperationType(),
                 record.getBalanceBefore(),
                 record.getBalanceAfter(),
                 record.getRemark(),

@@ -44,7 +44,6 @@ import { defaultConsoleRouteName } from '@/utils/authorization'
 import { clearAccessToken, setAccessToken } from '@/utils/auth'
 import logoUrl from '@/assets/logo.png'
 
-// 表单数据定义
 const loginForm = reactive({
   account: '',
   password: ''
@@ -61,11 +60,10 @@ onMounted(() => {
   }
 })
 
-// 表单校验规则
 const rules = reactive<FormRules>({
   account: [
     { required: true, message: '请输入账号', trigger: 'blur' },
-      { min: 4, max: 32, message: '账号长度为 4 到 32 个字符', trigger: 'blur' }
+    { min: 4, max: 32, message: '账号长度为 4 到 32 个字符', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -73,7 +71,6 @@ const rules = reactive<FormRules>({
   ]
 })
 
-// 登录事件处理
 const handleLogin = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
   try {
@@ -295,6 +292,8 @@ const goToRegister = () => {
     box-shadow: none;
   }
 
-  .login-container { padding-bottom: 24px; }
+  .login-container {
+    padding-bottom: 24px;
+  }
 }
 </style>

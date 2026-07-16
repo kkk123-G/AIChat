@@ -13,14 +13,14 @@
         <h2 class="form-title">创建账户</h2>
         <p class="form-subtitle">注册以开始使用 玩转AI</p>
 
-        <el-form ref="formRef" :model="formData" :rules="formRules" label-position="top" status-icon class="register-form">
+        <el-form ref="formRef" :model="formData" :rules="formRules" :validate-on-rule-change="false"
+          label-position="top" status-icon class="register-form">
           <el-form-item label="账号" prop="account">
             <el-input v-model="formData.account" placeholder="请输入账号" clearable />
           </el-form-item>
 
           <el-form-item label="密码" prop="password">
-            <el-input v-model="formData.password" type="password" placeholder="创建一个安全的密码" show-password />
-            <div class="password-tip">8 至 72 个字符</div>
+            <el-input v-model="formData.password" type="password" placeholder="至少 8 个字符" show-password />
           </el-form-item>
 
           <el-form-item class="submit-item">
@@ -45,7 +45,6 @@ import { useRouter } from 'vue-router'
 import { authApi } from '@/utils/api'
 import logoUrl from '@/assets/logo.png'
 
-// 表单数据定义
 const formData = reactive({
   account: '',
   password: ''
@@ -55,19 +54,17 @@ const loading = ref(false)
 const formRef = ref<FormInstance>()
 const router = useRouter()
 
-// 表单校验规则
 const formRules = reactive<FormRules>({
   account: [
-    { required: true, message: '请输入账号', trigger: 'blur' },
-    { min: 4, max: 32, message: '账号长度为 4 到 32 个字符', trigger: 'blur' }
+    { required: true, message: '请输入账号', trigger: 'submit' },
+    { min: 4, max: 32, message: '账号长度为 4 到 32 个字符', trigger: 'submit' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 72, message: '密码长度为 8 到 72 个字符', trigger: 'blur' }
+    { required: true, message: '请输入密码', trigger: 'submit' },
+    { min: 8, max: 72, message: '密码长度为 8 到 72 个字符', trigger: 'submit' }
   ]
 })
 
-// 注册提交逻辑
 const handleRegister = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
 
@@ -91,7 +88,6 @@ const handleRegister = async (formEl: FormInstance | undefined) => {
   }
 }
 
-// 跳转登录
 const goToLogin = () => {
   router.push({ name: 'login' })
 }
@@ -235,12 +231,6 @@ const goToLogin = () => {
   color: var(--app-text);
 }
 
-.password-tip {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-top: 6px;
-}
-
 .submit-item {
   margin-top: 32px;
   margin-bottom: 16px;
@@ -306,6 +296,8 @@ const goToLogin = () => {
     }
   }
 
-  .register-container { padding-bottom: 24px; }
+  .register-container {
+    padding-bottom: 24px;
+  }
 }
 </style>

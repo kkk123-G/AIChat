@@ -1,7 +1,7 @@
 export const MENU_CODES = {
   adminDashboard: 'admin-dashboard',
   userManagement: 'user-management',
-  rechargeRecords: 'recharge-records',
+  rechargeRefundRecords: 'recharge-refund-records',
   aiChat: 'ai-chat',
   balanceChanges: 'balance-changes',
   userProfile: 'user-profile',

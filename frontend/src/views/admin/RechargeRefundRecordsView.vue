@@ -1,8 +1,8 @@
 <template>
-  <div class="recharge-records-container">
+  <div class="recharge-refund-records-container">
     <section v-loading="loading" class="list-section">
       <div class="table-wrapper hidden-xs-only">
-        <el-table :data="pageRecords" class="recharge-table" style="width: 100%">
+        <el-table :data="pageRecords" class="recharge-refund-table" style="width: 100%">
           <el-table-column label="用户" min-width="180">
             <template #default="scope">
               <div class="user-cell">
@@ -14,15 +14,24 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="充值单号" min-width="178">
+          <el-table-column label="单号" min-width="178">
             <template #default="scope">
-              <span class="record-no">{{ scope.row.rechargeNo }}</span>
+              <span class="record-no">{{ scope.row.operationNo }}</span>
             </template>
           </el-table-column>
 
-          <el-table-column label="充值金额" min-width="130">
+          <el-table-column label="变动金额" min-width="130">
             <template #default="scope">
-              <span class="amount">{{ formatAmount(scope.row.amount) }}</span>
+              <span :class="['amount', scope.row.operationType.toLowerCase()]">{{ formatAmount(scope.row.amount)
+                }}</span>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="操作类型" min-width="108">
+            <template #default="scope">
+              <span :class="['operation-type', scope.row.operationType.toLowerCase()]">
+                {{ formatOperationType(scope.row.operationType) }}
+              </span>
             </template>
           </el-table-column>
 
@@ -36,7 +45,7 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="充值时间" min-width="124">
+          <el-table-column label="操作时间" min-width="124">
             <template #default="scope">{{ formatDateTime(scope.row.createdAt) }}</template>
           </el-table-column>
         </el-table>
@@ -51,17 +60,24 @@
                 <span class="username">{{ record.username }}</span>
               </div>
             </div>
-            <span class="amount">{{ formatAmount(record.amount) }}</span>
+            <span :class="['amount', record.operationType.toLowerCase()]">{{ formatAmount(record.amount) }}</span>
           </div>
 
           <div class="card-body">
-            <div class="info-row"><span class="label">充值单号</span><span class="value record-no">{{ record.rechargeNo
-                }}</span>
+            <div class="info-row"><span class="label">单号</span><span class="value record-no">{{ record.operationNo
+            }}</span>
             </div>
+            <div class="info-row"><span class="label">操作类型</span><span
+                :class="['operation-type', record.operationType.toLowerCase()]">{{
+                  formatOperationType(record.operationType)
+                }}</span></div>
             <div class="info-row"><span class="label">备注</span><span class="value">{{ record.remark || '-' }}</span>
             </div>
-            <div class="info-row"><span class="label">操作管理员</span><span class="value">{{ record.operatorUsername }}</span></div>
-            <div class="info-row"><span class="label">充值时间</span><span class="value">{{ formatDateTime(record.createdAt) }}</span></div>
+            <div class="info-row"><span class="label">操作管理员</span><span class="value">{{ record.operatorUsername
+                }}</span>
+            </div>
+            <div class="info-row"><span class="label">操作时间</span><span class="value">{{ formatDateTime(record.createdAt)
+                }}</span></div>
           </div>
         </article>
       </div>
@@ -74,8 +90,8 @@
           <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
             :total="total" layout="sizes" @size-change="handleSizeChange" />
         </div>
-        <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="total" layout="prev, pager, next"
-          @current-change="handleCurrentChange" />
+        <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="total"
+          layout="prev, pager, next" @current-change="handleCurrentChange" />
       </div>
     </section>
   </div>
@@ -83,18 +99,22 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { adminRechargeRecordApi, type RechargeRecord } from '@/utils/api'
+import { adminRechargeRefundRecordApi, type RechargeRefundRecord } from '@/utils/api'
 
 const currentPage = ref(1)
 const pageSize = ref<10 | 20 | 50>(10)
 const total = ref(0)
-const pageRecords = ref<RechargeRecord[]>([])
+const pageRecords = ref<RechargeRefundRecord[]>([])
 const loading = ref(false)
 const pageStart = computed(() => (total.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
 const pageEnd = computed(() => Math.min(currentPage.value * pageSize.value, total.value))
 
 function formatAmount(amount: number) {
   return `￥${amount.toFixed(2)}`
+}
+
+function formatOperationType(operationType: RechargeRefundRecord['operationType']) {
+  return operationType === 'RECHARGE' ? '充值' : '退款'
 }
 
 function formatDateTime(value: string) {
@@ -104,18 +124,18 @@ function formatDateTime(value: string) {
 function handleSizeChange(size: number) {
   pageSize.value = size as 10 | 20 | 50
   currentPage.value = 1
-  void loadRechargeRecords()
+  void loadRechargeRefundRecords()
 }
 
 function handleCurrentChange(page: number) {
   currentPage.value = page
-  void loadRechargeRecords()
+  void loadRechargeRefundRecords()
 }
 
-async function loadRechargeRecords() {
+async function loadRechargeRefundRecords() {
   loading.value = true
   try {
-    const page = await adminRechargeRecordApi.list({
+    const page = await adminRechargeRefundRecordApi.list({
       page: currentPage.value,
       size: pageSize.value,
     })
@@ -127,7 +147,7 @@ async function loadRechargeRecords() {
 }
 
 onMounted(() => {
-  void loadRechargeRecords()
+  void loadRechargeRefundRecords()
 })
 </script>
 
@@ -138,7 +158,7 @@ $text-main: var(--app-text);
 $text-muted: var(--app-text-muted);
 $border-color: var(--app-border-muted);
 
-.recharge-records-container {
+.recharge-refund-records-container {
   display: flex;
   min-width: 0;
   min-height: 0;
@@ -173,7 +193,7 @@ $border-color: var(--app-border-muted);
   overflow: auto;
 }
 
-.recharge-table {
+.recharge-refund-table {
   color: $text-main;
   font-size: 14px;
 
@@ -236,8 +256,32 @@ $border-color: var(--app-border-muted);
 }
 
 .amount {
-  color: #0f766e;
   font-weight: 600;
+
+  &.recharge {
+    color: #34a853;
+  }
+
+  &.refund {
+    color: #f87171;
+  }
+}
+
+.operation-type {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+
+  &.recharge {
+    background: #ecfdf5;
+    color: #34a853;
+  }
+
+  &.refund {
+    background: #fef2f2;
+    color: #f87171;
+  }
 }
 
 .operator {
@@ -331,7 +375,7 @@ $border-color: var(--app-border-muted);
     display: none !important;
   }
 
-  .recharge-records-container {
+  .recharge-refund-records-container {
     gap: 12px;
   }
 

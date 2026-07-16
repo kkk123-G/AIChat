@@ -112,27 +112,6 @@
             <span class="balance-amount">￥{{ balanceText }}</span>
           </div>
 
-
-
-          <!-- <el-dropdown trigger="click">
-            <div class="user-avatar-wrapper">
-              <el-avatar :size="32" class="user-avatar">{{ avatarText }}</el-avatar>
-              <div v-if="currentUser && !isMobile" class="user-info">
-                <span class="username">{{ currentUser.username }}</span>
-                <span class="role">{{ isAdmin ? 'Admin' : 'User' }}</span>
-              </div>
-              <el-icon class="el-icon--right"><arrow-down /></el-icon>
-            </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="goToProfile">个人资料</el-dropdown-item>
-                <el-dropdown-item divided :disabled="logoutLoading" @click="handleLogout">
-                  {{ logoutLoading ? '正在退出...' : '退出登录' }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown> -->
-
           <el-dropdown trigger="click" class="custom-user-dropdown" popper-class="custom-user-dropdown-popper">
             <div class="user-avatar-wrapper">
               <el-avatar :size="32" class="user-avatar">{{ avatarText }}</el-avatar>
@@ -178,9 +157,6 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-
-
-
         </div>
       </header>
 
@@ -246,7 +222,7 @@ const screenWidth = ref(window.innerWidth)
 const mainMenuItems: MenuItem[] = [
   { code: MENU_CODES.adminDashboard, index: 'admin-dashboard', title: '仪表盘', icon: Odometer },
   { code: MENU_CODES.userManagement, index: 'user-management', title: '用户管理', icon: User },
-  { code: MENU_CODES.rechargeRecords, index: 'recharge-records', title: '充值记录', icon: CreditCard },
+  { code: MENU_CODES.rechargeRefundRecords, index: 'recharge-refund-records', title: '充值退款', icon: CreditCard },
 ]
 
 const accountMenuItems: MenuItem[] = [
@@ -556,11 +532,10 @@ $navbar-height: 60px;
   overflow-x: hidden;
 }
 
-// 优化后：“我的账户” 分组标题样式
 .menu-group-title {
-  font-size: 12px; // 稍微调小一点 (原 11px，这里相较于新菜单的 15px 算明显小)
-  color: var(--app-text-muted); // 明确的灰色
-  font-weight: 600; // 同样进行一定的加粗
+  font-size: 12px;
+  color: var(--app-text-muted);
+  font-weight: 600;
   height: 46px;
   padding: 0 20px 10px;
   display: flex;
@@ -584,18 +559,17 @@ $navbar-height: 60px;
     padding 0.24s ease;
 
   :deep(.el-menu-item) {
-    height: 46px; // 稍微调高一点菜单项高度以匹配大字体
+    height: 46px;
     line-height: 46px;
     margin: 6px 0;
     border-radius: 8px;
     color: var(--app-text-regular);
     transition: all 0.2s ease;
 
-    // 菜单字体优化
     .menu-text {
       display: inline-block;
-      font-size: 15px; // 字体稍微调大 (原 14px)
-      font-weight: 600; // 字体进行一定的加粗
+      font-size: 15px;
+      font-weight: 600;
       opacity: 1;
       transform: translateX(0);
       transition:
@@ -603,11 +577,10 @@ $navbar-height: 60px;
         transform 0.16s ease;
     }
 
-    // 图标同步变大
     .el-icon {
       color: var(--app-text-regular);
       font-shrink: 0;
-      font-size: 19px; // 图标跟随字体一起变大 (原 17px)
+      font-size: 19px;
       margin-right: 4px;
     }
 
@@ -621,7 +594,7 @@ $navbar-height: 60px;
       color: $active-green-text !important;
 
       .menu-text {
-        font-weight: 700; // 选中状态下加深字重
+        font-weight: 700;
       }
 
       .el-icon {
@@ -798,7 +771,7 @@ $navbar-height: 60px;
 
         .role {
           font-size: 11px;
-        color: var(--app-text-muted);
+          color: var(--app-text-muted);
         }
       }
     }
@@ -847,14 +820,10 @@ $navbar-height: 60px;
   }
 }
 
-// 在 <style scoped lang="scss"> 的最底部添加：
-
-/* 自定义下拉菜单弹窗样式 */
 :global(.custom-user-dropdown-popper) {
   translate: -25px 0 !important;
 }
 
-// H5 点击用户信息时移除触发器默认的蓝色焦点框和点击高亮。
 :global(.custom-user-dropdown),
 :global(.custom-user-dropdown .user-avatar-wrapper),
 :global(.custom-user-dropdown .el-tooltip__trigger),
@@ -897,7 +866,6 @@ $navbar-height: 60px;
   color: #475569;
 }
 
-// 客服项不可点击，且悬浮时保持原背景和文字颜色。
 :global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item),
 :global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item:hover),
 :global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item:focus),
@@ -916,7 +884,6 @@ $navbar-height: 60px;
   color: #94a3b8;
 }
 
-// 退出登录项使用红色，并在悬浮时显示浅红色背景。
 :global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item),
 :global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item .el-icon) {
   color: #dc2626 !important;

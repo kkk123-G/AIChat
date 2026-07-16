@@ -28,7 +28,7 @@ class MenuPermissionServiceTest {
         assertEquals(List.of(
                 MenuPermissionService.ADMIN_DASHBOARD,
                 MenuPermissionService.USER_MANAGEMENT,
-                MenuPermissionService.RECHARGE_RECORDS,
+                MenuPermissionService.RECHARGE_REFUND_RECORDS,
                 MenuPermissionService.AI_CHAT,
                 MenuPermissionService.BALANCE_CHANGES,
                 MenuPermissionService.USER_PROFILE

@@ -204,7 +204,7 @@ function initCurveChart(data: AdminDashboard) {
       type: 'value',
       name: '调用次数',
       minInterval: 1,
-        nameTextStyle: {
+      nameTextStyle: {
         align: 'right',
         color: themeColor('--app-text-muted', '#909399'),
         fontWeight: 'bold',
@@ -284,7 +284,6 @@ onBeforeUnmount(() => {
     margin-bottom: 16px;
   }
 
-  /* 穿透修改 Element Plus 卡片样式，配置圆角、边框与纯白底色 */
   :deep(.el-card) {
     background-color: var(--app-surface) !important;
     border: 1px solid var(--app-border) !important;
@@ -292,13 +291,11 @@ onBeforeUnmount(() => {
     box-shadow: none !important;
   }
 
-  /* 调整卡片 Header 边距 */
   :deep(.el-card__header) {
     border-bottom: 1px solid var(--app-border-muted) !important;
     padding: 14px 16px !important;
   }
 
-  /* 统一调整卡片内容区域的内边距 */
   :deep(.el-card__body) {
     padding: 16px !important;
   }
@@ -346,7 +343,6 @@ onBeforeUnmount(() => {
   }
 }
 
-/* --- H5 移动端自适应 --- */
 @media screen and (max-width: 768px) {
   .dashboard-container {
     padding: 10px;
