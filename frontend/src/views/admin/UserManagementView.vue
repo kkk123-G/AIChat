@@ -349,11 +349,11 @@ async function submitRecharge() {
 
 <style scoped lang="scss">
 // 基础变量与高保真主色调
-$primary-color: #00b5ad;
-$bg-color: #f8fafc;
-$text-main: #333333;
-$text-muted: #909399;
-$border-color: #f0f2f5;
+$primary-color: var(--app-primary);
+$bg-color: var(--app-bg);
+$text-main: var(--app-text);
+$text-muted: var(--app-text-muted);
+$border-color: var(--app-border-muted);
 
 .user-manage-container {
   display: flex;
@@ -366,7 +366,7 @@ $border-color: #f0f2f5;
   .toolbar-section,
   .list-section,
   .pagination-section {
-    background-color: #ffffff;
+    background-color: var(--app-surface);
     border: 1px solid $border-color;
     border-radius: 8px;
   }
@@ -400,7 +400,7 @@ $border-color: #f0f2f5;
 
       :deep(.el-input__wrapper) {
         border-radius: 20px; // 圆角搜索框
-        background-color: #f5f7fa;
+        background-color: var(--app-surface-muted);
         border: none;
         box-shadow: none;
 
@@ -437,8 +437,8 @@ $border-color: #f0f2f5;
       color: $text-main;
 
       :deep(th.el-table__cell) {
-        background-color: #fafbfd;
-        color: #606266;
+      background-color: var(--app-surface-subtle);
+      color: var(--app-text-regular);
         font-weight: 600;
         border-bottom: 1px solid $border-color;
       }
@@ -462,12 +462,12 @@ $border-color: #f0f2f5;
 
     .account-text {
       font-weight: 500;
-      color: #303133;
+      color: var(--app-text);
     }
 
     .user-avatar {
-      background-color: #e0f2f1;
-      color: #00695c;
+      background-color: var(--app-primary-soft);
+      color: var(--app-primary-strong);
       font-weight: 600;
     }
   }
@@ -560,7 +560,7 @@ $border-color: #f0f2f5;
     overflow-y: auto;
 
     .mobile-card {
-      background: #ffffff;
+      background: var(--app-surface);
       border: 1px solid $border-color;
       border-radius: 8px;
       padding: 14px;

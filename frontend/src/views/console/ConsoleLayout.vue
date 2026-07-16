@@ -37,7 +37,7 @@
             <Moon v-if="!isDark" />
             <Sunny v-else />
           </el-icon>
-          <span class="footer-text" v-show="!isCollapse">深色模式</span>
+          <span class="footer-text" v-show="!isCollapse">{{ isDark ? '浅色模式' : '深色模式' }}</span>
         </div>
         <div class="footer-item collapse-toggle" @click="toggleSidebar">
           <el-icon>
@@ -84,7 +84,7 @@
             <Moon v-if="!isDark" />
             <Sunny v-else />
           </el-icon>
-          <span class="footer-text">深色模式</span>
+          <span class="footer-text">{{ isDark ? '浅色模式' : '深色模式' }}</span>
         </div>
       </div>
     </el-drawer>
@@ -111,7 +111,10 @@
             </el-icon>
             <span class="balance-amount">￥{{ balanceText }}</span>
           </div>
-          <el-dropdown trigger="click">
+
+
+
+          <!-- <el-dropdown trigger="click">
             <div class="user-avatar-wrapper">
               <el-avatar :size="32" class="user-avatar">{{ avatarText }}</el-avatar>
               <div v-if="currentUser && !isMobile" class="user-info">
@@ -128,7 +131,56 @@
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
+          </el-dropdown> -->
+
+          <el-dropdown trigger="click" class="custom-user-dropdown" popper-class="custom-user-dropdown-popper">
+            <div class="user-avatar-wrapper">
+              <el-avatar :size="32" class="user-avatar">{{ avatarText }}</el-avatar>
+              <div v-if="currentUser && !isMobile" class="user-info">
+                <span class="username">{{ currentUser.username }}</span>
+                <span class="role">{{ isAdmin ? 'Admin' : 'User' }}</span>
+              </div>
+              <el-icon class="el-icon--right"><arrow-down /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="goToProfile">
+                  <el-icon>
+                    <User />
+                  </el-icon>
+                  <span>个人资料</span>
+                </el-dropdown-item>
+
+                <el-dropdown-item @click="openGitHub">
+                  <el-icon>
+                    <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="currentColor"
+                        d="M511.6 76.3C264.3 76.2 64 276.4 64 523.5 64 718.9 189.3 885 363.8 946c23.5 5.9 19.9-10.8 19.9-22.2v-77.5c-135.7 15.9-141.2-73.9-150.3-88.9C215 726 171.5 718 184.5 703c30.9-15.9 62.4 4 98.9 57.9 26.4 39.1 77.9 32.5 104 26 5.7-23.5 17.9-44.5 34.7-60.8-140.6-25.2-199.2-111-199.2-213 0-49.5 16.3-95 48.3-131.7-20.4-60.5 1.9-112.3 4.9-120 58.1-5.2 118.5 41.6 123.2 45.3 33-8.9 70.7-13.6 112.9-13.6 42.4 0 80.2 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.3-43.9 2.9 7.7 24.7 58.3 5.5 118 32.4 36.8 48.9 82.7 48.9 132.3 0 102.2-59 188.1-200 212.9 23.5 23.2 38.1 55.4 38.1 91v112.5c0.8 9 0 27.9 22.7 22.7C826.9 883.1 954 717.7 954 523.9 954 277.3 754.6 76.3 511.6 76.3z">
+                      </path>
+                    </svg>
+                  </el-icon>
+                  <span>GitHub</span>
+                </el-dropdown-item>
+
+                <el-dropdown-item divided class="service-item" @click="keepServiceMenuOpen">
+                  <el-icon>
+                    <Service />
+                  </el-icon>
+                  <span>联系客服: 2938374296</span>
+                </el-dropdown-item>
+
+                <el-dropdown-item divided :disabled="logoutLoading" @click="handleLogout" class="logout-item">
+                  <el-icon>
+                    <SwitchButton />
+                  </el-icon>
+                  <span>{{ logoutLoading ? '正在退出...' : '退出登录' }}</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
           </el-dropdown>
+
+
+
         </div>
       </header>
 
@@ -158,12 +210,15 @@ import {
   Sunny,
   DArrowLeft,
   DArrowRight,
+  Service,
+  SwitchButton
 } from '@element-plus/icons-vue'
 import logoUrl from '@/assets/logo.png'
 import { authApi, userAccountApi, type CurrentUser } from '@/utils/api'
 import { MENU_CODES, type MenuCode } from '@/utils/authorization'
 import { clearAccessToken } from '@/utils/auth'
 import { useAccountStore } from '@/stores/account'
+import { useThemeStore } from '@/stores/theme'
 
 interface MenuItem {
   code: MenuCode
@@ -178,10 +233,11 @@ const router = useRouter()
 const isCollapse = ref(false)
 const menuCollapsed = ref(false)
 const drawerVisible = ref(false)
-const isDark = ref(false)
 const currentUser = ref<CurrentUser | null>(null)
 const accountStore = useAccountStore()
+const themeStore = useThemeStore()
 const { balance } = storeToRefs(accountStore)
+const { isDark } = storeToRefs(themeStore)
 const logoutLoading = ref(false)
 const checkedInToday = ref(false)
 const checkInLoading = ref(false)
@@ -217,7 +273,15 @@ const currentMenuTitle = computed(() => {
 let collapseTimer: ReturnType<typeof window.setTimeout> | undefined
 
 const toggleDarkMode = () => {
-  isDark.value = !isDark.value
+  themeStore.toggleTheme()
+}
+
+const openGitHub = () => {
+  window.open('https://github.com/kkk123-G/AIChat', '_blank')
+}
+
+const keepServiceMenuOpen = (event: MouseEvent) => {
+  event.preventDefault()
 }
 
 const handleMenuSelect = (index: string) => {
@@ -342,12 +406,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
-$sidebar-bg: #ffffff;
-$navbar-bg: #ffffff;
-$main-bg: #f8fafc;
-$border-color: #f1f5f9;
-$active-green-bg: #f0fdfa;
-$active-green-text: #0d9488;
+$sidebar-bg: var(--app-surface);
+$navbar-bg: var(--app-surface);
+$main-bg: var(--app-bg);
+$border-color: var(--app-border-muted);
+$active-green-bg: var(--app-primary-soft);
+$active-green-text: var(--app-primary);
 
 $sidebar-width: 240px;
 $sidebar-collapse-width: 64px;
@@ -477,7 +541,7 @@ $navbar-height: 60px;
     overflow: hidden;
     font-size: 18px;
     font-weight: bold;
-    color: #000;
+    color: var(--app-text);
     white-space: nowrap;
     transition:
       max-width 0.16s ease,
@@ -495,7 +559,7 @@ $navbar-height: 60px;
 // 优化后：“我的账户” 分组标题样式
 .menu-group-title {
   font-size: 12px; // 稍微调小一点 (原 11px，这里相较于新菜单的 15px 算明显小)
-  color: #64748b; // 明确的灰色
+  color: var(--app-text-muted); // 明确的灰色
   font-weight: 600; // 同样进行一定的加粗
   height: 46px;
   padding: 0 20px 10px;
@@ -524,7 +588,7 @@ $navbar-height: 60px;
     line-height: 46px;
     margin: 6px 0;
     border-radius: 8px;
-    color: #334155;
+    color: var(--app-text-regular);
     transition: all 0.2s ease;
 
     // 菜单字体优化
@@ -541,15 +605,15 @@ $navbar-height: 60px;
 
     // 图标同步变大
     .el-icon {
-      color: #475569;
+      color: var(--app-text-regular);
       font-shrink: 0;
       font-size: 19px; // 图标跟随字体一起变大 (原 17px)
       margin-right: 4px;
     }
 
     &:hover {
-      background-color: #f8fafc;
-      color: #0f172a;
+      background-color: var(--app-surface-muted);
+      color: var(--app-text);
     }
 
     &.is-active {
@@ -588,7 +652,7 @@ $navbar-height: 60px;
     display: flex;
     align-items: center;
     padding: 0 12px;
-    color: #475569;
+    color: var(--app-text-regular);
     cursor: pointer;
     border-radius: 6px;
     transition: all 0.2s;
@@ -596,8 +660,8 @@ $navbar-height: 60px;
     font-weight: 500;
 
     &:hover {
-      background-color: #f8fafc;
-      color: #0f172a;
+      background-color: var(--app-surface-muted);
+      color: var(--app-text);
     }
 
     .el-icon {
@@ -647,7 +711,7 @@ $navbar-height: 60px;
     .collapse-btn {
       cursor: pointer;
       margin-right: 16px;
-      color: #64748b;
+      color: var(--app-text-muted);
       outline: none;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -734,7 +798,7 @@ $navbar-height: 60px;
 
         .role {
           font-size: 11px;
-          color: #94a3b8;
+        color: var(--app-text-muted);
         }
       }
     }
@@ -781,5 +845,98 @@ $navbar-height: 60px;
       padding: 0 12px;
     }
   }
+}
+
+// 在 <style scoped lang="scss"> 的最底部添加：
+
+/* 自定义下拉菜单弹窗样式 */
+:global(.custom-user-dropdown-popper) {
+  translate: -25px 0 !important;
+}
+
+// H5 点击用户信息时移除触发器默认的蓝色焦点框和点击高亮。
+:global(.custom-user-dropdown),
+:global(.custom-user-dropdown .user-avatar-wrapper),
+:global(.custom-user-dropdown .el-tooltip__trigger),
+:global(.custom-user-dropdown .el-tooltip__trigger:focus),
+:global(.custom-user-dropdown .el-tooltip__trigger:focus-visible),
+:global(.custom-user-dropdown .user-avatar-wrapper:focus),
+:global(.custom-user-dropdown .user-avatar-wrapper:focus-visible),
+:global(.custom-user-dropdown:focus),
+:global(.custom-user-dropdown:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  color: #334155;
+  font-size: 14px;
+}
+
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item .el-icon) {
+  margin-right: 12px;
+  color: #475569;
+  font-size: 16px;
+}
+
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled):hover),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled):focus),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled).is-focus) {
+  background-color: #f3f4f6 !important;
+  color: #334155 !important;
+}
+
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled):hover .el-icon),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled):focus .el-icon),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled).is-focus .el-icon) {
+  color: #475569;
+}
+
+// 客服项不可点击，且悬浮时保持原背景和文字颜色。
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item:hover),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item:focus),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item.is-focus),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item.is-disabled) {
+  cursor: text;
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  background-color: transparent !important;
+  color: #64748b !important;
+}
+
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item .el-icon),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.service-item:hover .el-icon) {
+  color: #94a3b8;
+}
+
+// 退出登录项使用红色，并在悬浮时显示浅红色背景。
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item .el-icon) {
+  color: #dc2626 !important;
+}
+
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item:hover),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item:focus),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item.is-focus) {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item:hover .el-icon),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item:focus .el-icon),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item.is-focus .el-icon) {
+  color: #dc2626 !important;
+}
+
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item.is-disabled),
+:global(.custom-user-dropdown-popper .el-dropdown-menu__item.logout-item.is-disabled .el-icon) {
+  color: #fca5a5 !important;
 }
 </style>

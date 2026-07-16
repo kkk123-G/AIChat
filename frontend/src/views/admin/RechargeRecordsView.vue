@@ -132,11 +132,11 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-$primary-color: #00b5ad;
-$bg-color: #f8fafc;
-$text-main: #333333;
-$text-muted: #909399;
-$border-color: #f0f2f5;
+$primary-color: var(--app-primary);
+$bg-color: var(--app-bg);
+$text-main: var(--app-text);
+$text-muted: var(--app-text-muted);
+$border-color: var(--app-border-muted);
 
 .recharge-records-container {
   display: flex;
@@ -151,7 +151,7 @@ $border-color: #f0f2f5;
 .pagination-section {
   border: 1px solid $border-color;
   border-radius: 8px;
-  background-color: #ffffff;
+  background-color: var(--app-surface);
 }
 
 .list-section {
@@ -179,8 +179,8 @@ $border-color: #f0f2f5;
 
   :deep(th.el-table__cell) {
     border-bottom: 1px solid $border-color;
-    background-color: #fafbfd;
-    color: #606266;
+    background-color: var(--app-surface-subtle);
+    color: var(--app-text-regular);
     font-weight: 600;
   }
 
@@ -203,8 +203,8 @@ $border-color: #f0f2f5;
 
 .user-avatar {
   flex: 0 0 auto;
-  background-color: #e0f2f1;
-  color: #00695c;
+  background-color: var(--app-primary-soft);
+  color: var(--app-primary-strong);
   font-weight: 600;
 }
 
@@ -230,7 +230,7 @@ $border-color: #f0f2f5;
 }
 
 .record-no {
-  color: #606266;
+  color: var(--app-text-regular);
   font-family: Consolas, monospace;
   font-size: 13px;
 }
@@ -268,7 +268,7 @@ $border-color: #f0f2f5;
   margin: 0 3px;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
-  background-color: #ffffff;
+  background-color: var(--app-surface);
   font-weight: 400;
 
   &.is-active {
@@ -293,7 +293,7 @@ $border-color: #f0f2f5;
   border: 1px solid $border-color;
   border-radius: 8px;
   padding: 14px;
-  background-color: #ffffff;
+  background-color: var(--app-surface);
 }
 
 .card-header {

@@ -468,13 +468,13 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
-$bg-color: #f8fafc;
-$surface-color: #ffffff;
-$border-color: #e5e7eb;
-$text-primary: #1f2937;
-$text-regular: #4b5563;
-$text-secondary: #9ca3af;
-$accent: #0d9488;
+$bg-color: var(--app-bg);
+$surface-color: var(--app-surface);
+$border-color: var(--app-border);
+$text-primary: var(--app-text);
+$text-regular: var(--app-text-regular);
+$text-secondary: var(--app-text-muted);
+$accent: var(--app-primary);
 
 .app-layout {
   display: flex;
@@ -491,7 +491,7 @@ $accent: #0d9488;
   flex: 0 0 280px;
   flex-direction: column;
   border-right: 1px solid $border-color;
-  background: #ffffff;
+  background: var(--app-surface);
   z-index: 2;
 }
 
@@ -513,7 +513,7 @@ $accent: #0d9488;
   height: 38px;
   border-radius: 12px;
   border-color: #99f6e4;
-  color: #0f766e;
+  color: var(--app-primary-strong);
 }
 
 .search-trigger {
@@ -556,7 +556,7 @@ $accent: #0d9488;
   color: $text-regular;
 
   &:hover {
-    background: #f1f5f9;
+    background: var(--app-surface-subtle);
 
     .session-delete:not(:disabled) {
       opacity: 1;
@@ -564,12 +564,12 @@ $accent: #0d9488;
   }
 
   &.is-active {
-    background: #ccfbf1;
-    color: #0f766e;
+    background: var(--app-primary-soft);
+    color: var(--app-primary-strong);
     font-weight: 600;
 
     .session-select {
-      color: #0f766e;
+      color: var(--app-primary-strong);
       font-weight: 600;
     }
   }
@@ -640,7 +640,7 @@ $accent: #0d9488;
   text-align: left;
 
   &:hover:not(:disabled) {
-    background: #f8fafc;
+    background: var(--app-surface-muted);
   }
 
   &:disabled {
@@ -715,7 +715,7 @@ $accent: #0d9488;
   right: 0;
   left: 0;
   margin: 0;
-  color: #111827;
+  color: var(--app-text);
   font-size: 22px;
   font-weight: 700;
   line-height: 24px;
@@ -737,7 +737,8 @@ $accent: #0d9488;
     }
 
     .message-bubble {
-      background: #ccfbf1;
+      background: var(--app-user-bubble);
+      color: var(--app-user-bubble-text);
     }
   }
 
@@ -784,14 +785,14 @@ $accent: #0d9488;
     overflow-x: auto;
     border-radius: 6px;
     padding: 12px;
-    background: #0f172a;
-    color: #e2e8f0;
+    background: var(--app-code-bg);
+    color: var(--app-code-text);
   }
 
   :deep(code) {
     border-radius: 3px;
     padding: 2px 4px;
-    background: #f1f5f9;
+    background: var(--app-surface-subtle);
     font-family: Consolas, monospace;
   }
 
@@ -801,7 +802,7 @@ $accent: #0d9488;
   }
 
   :deep(a) {
-    color: #0f766e;
+    color: var(--app-primary-strong);
   }
 
   :deep(table) {

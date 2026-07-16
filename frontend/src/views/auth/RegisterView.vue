@@ -105,7 +105,7 @@ const goToLogin = () => {
   align-items: center;
   min-height: 100vh;
   width: 100vw;
-  background-color: #fafafa;
+  background-color: var(--app-bg);
   background-image:
     linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -169,7 +169,7 @@ const goToLogin = () => {
   .brand-title {
     font-size: 24px;
     font-weight: 700;
-    color: #111827;
+    color: var(--app-text);
     margin: 0 0 6px;
     letter-spacing: 1px;
   }
@@ -187,7 +187,7 @@ const goToLogin = () => {
   border: 1px solid rgba(0, 0, 0, 0.04);
   border-radius: 16px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.02) !important;
-  background-color: #ffffff;
+  background-color: var(--app-surface);
 
   :deep(.el-card__body) {
     padding: 40px 36px;
@@ -196,7 +196,7 @@ const goToLogin = () => {
   .form-title {
     font-size: 22px;
     font-weight: 700;
-    color: #1f2937;
+    color: var(--app-text);
     text-align: center;
     margin: 0 0 8px;
   }
@@ -213,12 +213,12 @@ const goToLogin = () => {
   padding: 0;
   margin-bottom: 6px;
   font-weight: 600;
-  color: #374151;
+  color: var(--app-text-regular);
 }
 
 .register-form :deep(.el-input__wrapper) {
   padding: 8px 12px;
-  background-color: #f3f4f6;
+  background-color: var(--app-surface-muted);
   border: 1px solid transparent;
   border-radius: 8px;
   box-shadow: none !important;
@@ -226,13 +226,13 @@ const goToLogin = () => {
 }
 
 .register-form :deep(.el-input__wrapper.is-focus) {
-  background-color: #ffffff;
-  border-color: #0ea5e9;
+  background-color: var(--app-surface);
+  border-color: var(--app-primary);
 }
 
 .register-form :deep(.el-input__inner) {
   height: 24px;
-  color: #1f2937;
+  color: var(--app-text);
 }
 
 .password-tip {
@@ -249,8 +249,8 @@ const goToLogin = () => {
 .submit-btn {
   width: 100%;
   height: 44px;
-  background-color: #0d9488 !important;
-  border-color: #0d9488 !important;
+  background-color: var(--app-primary) !important;
+  border-color: var(--app-primary) !important;
   border-radius: 8px;
   font-size: 15px;
   font-weight: 500;
@@ -258,8 +258,8 @@ const goToLogin = () => {
 
   &:hover,
   &:focus {
-    background-color: #115e59 !important;
-    border-color: #115e59 !important;
+    background-color: var(--app-primary-strong) !important;
+    border-color: var(--app-primary-strong) !important;
   }
 }
 
@@ -273,11 +273,11 @@ const goToLogin = () => {
 
   .el-link {
     font-size: 13px;
-    color: #0d9488;
+    color: var(--app-primary-strong);
     font-weight: 500;
 
     &:hover {
-      color: #0d9488;
+      color: var(--app-primary-strong);
       text-decoration: underline;
     }
   }
@@ -298,7 +298,7 @@ const goToLogin = () => {
   .register-card {
     width: 92%;
     border: none;
-    background: #ffffff;
+    background: var(--app-surface);
     box-shadow: none !important;
 
     :deep(.el-card__body) {

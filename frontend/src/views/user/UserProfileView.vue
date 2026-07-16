@@ -6,7 +6,7 @@
         <el-avatar
           :size="104"
           class="avatar"
-          :style="{ backgroundColor: '#e0f2f1', color: '#00695c', fontSize: '32px', fontWeight: '600' }"
+          :style="{ backgroundColor: 'var(--app-primary-soft)', color: 'var(--app-primary-strong)', fontSize: '32px', fontWeight: '600' }"
         >
           {{ avatarText }}
         </el-avatar>
@@ -165,10 +165,10 @@ onMounted(() => void loadProfile())
 
 <style lang="scss" scoped>
 // 定义主题色变量
-$theme-green: #11a983;
-$text-main: #333333;
-$text-regular: #606266;
-$text-secondary: #909399;
+$theme-green: var(--app-primary);
+$text-main: var(--app-text);
+$text-regular: var(--app-text-regular);
+$text-secondary: var(--app-text-muted);
 
 .profile-container {
   /* 基础尺寸全部按约 1.3 倍放大 */
@@ -182,15 +182,15 @@ $text-secondary: #909399;
 
   // 通用卡片样式
   .custom-card {
-    background-color: #ffffff;
-    border: 1px solid #ebeef5;
+    background-color: var(--app-surface);
+    border: 1px solid var(--app-border);
     border-radius: 12px;
     /* 圆角稍微放大 */
     box-sizing: border-box;
     width: 100%;
 
     :deep(.el-card__header) {
-      border-bottom: 1px solid #f0f2f5;
+      border-bottom: 1px solid var(--app-border-muted);
       padding: 24px 32px;
       /* 头部内边距放大 */
     }
@@ -241,7 +241,7 @@ $text-secondary: #909399;
             font-size: 18px;
             /* 字体放大 */
             color: $text-regular;
-            background: #f4f4f5;
+            background: var(--app-surface-subtle);
             padding: 6px 16px;
             border-radius: 6px;
           }
@@ -302,14 +302,14 @@ $text-secondary: #909399;
       width: 70px;
       /* 图标容器放大 */
       height: 70px;
-      background-color: #d1f4e8;
+      background-color: var(--app-primary-soft);
       border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
 
       .contact-icon {
-        color: #0c7558;
+        color: var(--app-primary-strong);
       }
     }
 
@@ -322,14 +322,14 @@ $text-secondary: #909399;
         font-size: 24px;
         /* 字体放大 */
         font-weight: bold;
-        color: #0c7558;
+        color: var(--app-primary-strong);
         letter-spacing: 1px;
       }
 
       .contact-number {
         font-size: 20px;
         /* 字体放大 */
-        color: #333;
+        color: var(--app-text);
       }
     }
   }
@@ -357,7 +357,7 @@ $text-secondary: #909399;
         :deep(.el-input__wrapper) {
           padding: 10px 16px;
           /* 增加输入框内部上下留白，使其更高 */
-          box-shadow: 0 0 0 1px #dcdfe6 inset;
+          box-shadow: 0 0 0 1px var(--app-border) inset;
           border-radius: 8px;
 
           &:hover,

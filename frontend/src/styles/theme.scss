@@ -1,0 +1,191 @@
+:root {
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-muted: #f8fafc;
+  --app-surface-subtle: #fafbfd;
+  --app-border: #e5e7eb;
+  --app-border-muted: #f1f5f9;
+  --app-text: #1f2937;
+  --app-text-regular: #475569;
+  --app-text-muted: #94a3b8;
+  --app-primary: #0d9488;
+  --app-primary-soft: #f0fdfa;
+  --app-primary-strong: #0f766e;
+  --app-menu-text: #334155;
+  --app-menu-icon: #475569;
+  --app-menu-hover: #f3f4f6;
+  --app-menu-disabled: #64748b;
+  --app-user-bubble: #ccfbf1;
+  --app-user-bubble-text: #0f766e;
+  --app-danger: #dc2626;
+  --app-code-bg: #0f172a;
+  --app-code-text: #e2e8f0;
+}
+
+html.dark {
+  color-scheme: dark;
+  --app-bg: #111827;
+  --app-surface: #1f2937;
+  --app-surface-muted: #182230;
+  --app-surface-subtle: #243244;
+  --app-border: #374151;
+  --app-border-muted: #2d3a4b;
+  --app-text: #f3f4f6;
+  --app-text-regular: #d1d5db;
+  --app-text-muted: #9ca3af;
+  --app-primary: #2dd4bf;
+  --app-primary-soft: #123d3b;
+  --app-primary-strong: #5eead4;
+  --app-menu-text: #e5e7eb;
+  --app-menu-icon: #cbd5e1;
+  --app-menu-hover: #374151;
+  --app-menu-disabled: #9ca3af;
+  --app-user-bubble: #164e63;
+  --app-user-bubble-text: #cffafe;
+  --app-danger: #f87171;
+  --app-code-bg: #0b1220;
+  --app-code-text: #e5e7eb;
+}
+
+html,
+body,
+#app {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body {
+  min-width: 320px;
+}
+
+html.dark {
+  .login-container,
+  .register-container {
+    background-color: var(--app-bg);
+    color: var(--app-text);
+  }
+
+  .login-card,
+  .register-card {
+    background-color: var(--app-surface);
+    border-color: var(--app-border);
+  }
+
+  .login-container .logo-title,
+  .register-container .logo-title,
+  .login-container .card-title,
+  .register-container .card-title,
+  .login-container .el-form-item__label,
+  .register-container .el-form-item__label {
+    color: var(--app-text);
+  }
+
+  .dashboard-container .el-card,
+  .recharge-records-container > section,
+  .user-manage-container > section,
+  .balance-changes-container > section,
+  .profile-container .custom-card {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text);
+  }
+
+  .dashboard-container .chart-header,
+  .dashboard-container .data-card .card-body .value,
+  .recharge-records-container .username,
+  .user-manage-container .account-text,
+  .profile-container .username,
+  .profile-container .stat-value,
+  .profile-container .card-title {
+    color: var(--app-text);
+  }
+
+  .el-card,
+  .el-dialog,
+  .el-drawer,
+  .el-dropdown-menu,
+  .el-popover {
+    background-color: var(--app-surface);
+    border-color: var(--app-border);
+    color: var(--app-text);
+  }
+
+  .el-table,
+  .el-table__expanded-cell,
+  .el-table tr,
+  .el-table th.el-table__cell,
+  .el-table td.el-table__cell {
+    background-color: var(--app-surface);
+    color: var(--app-text);
+    border-color: var(--app-border);
+  }
+
+  .el-table th.el-table__cell {
+    background-color: var(--app-surface-subtle);
+  }
+
+  .el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell,
+  .el-dropdown-menu__item:not(.is-disabled):hover,
+  .el-dropdown-menu__item:not(.is-disabled):focus {
+    background-color: var(--app-surface-subtle);
+  }
+
+  .el-input__wrapper,
+  .el-textarea__inner,
+  .el-select__wrapper {
+    background-color: var(--app-surface-muted);
+    box-shadow: 0 0 0 1px var(--app-border) inset;
+    color: var(--app-text);
+  }
+
+  .el-input__inner,
+  .el-textarea__inner,
+  .el-select__selected-item {
+    color: var(--app-text);
+  }
+
+  .el-menu {
+    background-color: var(--app-surface);
+    color: var(--app-text-regular);
+  }
+
+  .el-menu-item:not(.is-active):hover {
+    background-color: var(--app-surface-subtle);
+  }
+
+  .custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled) {
+    color: var(--app-menu-text);
+  }
+
+  .custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled) .el-icon {
+    color: var(--app-menu-icon);
+  }
+
+  .custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled):hover,
+  .custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled):focus,
+  .custom-user-dropdown-popper .el-dropdown-menu__item:not(.service-item):not(.logout-item):not(.is-disabled).is-focus {
+    background-color: var(--app-menu-hover) !important;
+    color: var(--app-menu-text) !important;
+  }
+
+  .custom-user-dropdown-popper .el-dropdown-menu__item.service-item,
+  .custom-user-dropdown-popper .el-dropdown-menu__item.service-item:hover,
+  .custom-user-dropdown-popper .el-dropdown-menu__item.service-item:focus {
+    background-color: transparent !important;
+    color: var(--app-menu-disabled) !important;
+  }
+
+  .custom-user-dropdown-popper .el-dropdown-menu__item.logout-item,
+  .custom-user-dropdown-popper .el-dropdown-menu__item.logout-item .el-icon {
+    color: var(--app-danger) !important;
+  }
+
+  .custom-user-dropdown-popper .el-dropdown-menu__item.logout-item:hover,
+  .custom-user-dropdown-popper .el-dropdown-menu__item.logout-item:focus,
+  .custom-user-dropdown-popper .el-dropdown-menu__item.logout-item.is-focus {
+    background-color: color-mix(in srgb, var(--app-danger) 14%, transparent) !important;
+    color: var(--app-danger) !important;
+  }
+}

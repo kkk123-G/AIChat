@@ -78,6 +78,10 @@ let pieChartInstance: echarts.ECharts | null = null
 let lineChartInstance: echarts.ECharts | null = null
 let curveChartInstance: echarts.ECharts | null = null
 
+function themeColor(name: string, fallback: string) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+}
+
 function initPieChart(data: AdminDashboard) {
   if (!pieChartRef.value) return
   pieChartInstance?.dispose()
@@ -95,14 +99,14 @@ function initPieChart(data: AdminDashboard) {
         left: '25%',
         textAlign: 'center',
         bottom: '8%',
-        textStyle: { fontSize: 13, color: '#606266', fontWeight: 'normal' }
+        textStyle: { fontSize: 13, color: themeColor('--app-text-muted', '#606266'), fontWeight: 'normal' }
       },
       {
         text: '总计状态',
         left: '75%',
         textAlign: 'center',
         bottom: '8%',
-        textStyle: { fontSize: 13, color: '#606266', fontWeight: 'normal' }
+        textStyle: { fontSize: 13, color: themeColor('--app-text-muted', '#606266'), fontWeight: 'normal' }
       }
     ],
     color: ['#67C23A', '#F56C6C'],
@@ -115,7 +119,7 @@ function initPieChart(data: AdminDashboard) {
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 6,
-          borderColor: '#ffffff',
+          borderColor: themeColor('--app-surface', '#ffffff'),
           borderWidth: 2
         },
         label: { show: false },
@@ -132,7 +136,7 @@ function initPieChart(data: AdminDashboard) {
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 6,
-          borderColor: '#ffffff',
+          borderColor: themeColor('--app-surface', '#ffffff'),
           borderWidth: 2
         },
         label: { show: false },
@@ -151,6 +155,7 @@ function initLineChart(data: AdminDashboard) {
   lineChartInstance?.dispose()
   lineChartInstance = echarts.init(lineChartRef.value)
   const option = {
+    textStyle: { color: themeColor('--app-text-regular', '#606266') },
     tooltip: { trigger: 'axis' },
     grid: { left: '3%', right: '4%', bottom: '5%', containLabel: true },
     xAxis: {
@@ -167,8 +172,8 @@ function initLineChart(data: AdminDashboard) {
         name: '调用次数',
         type: 'line',
         data: data.requestTrend.values,
-        itemStyle: { color: '#409EFF' },
-        lineStyle: { width: 3 },
+        itemStyle: { color: themeColor('--app-primary-strong', '#409EFF') },
+        lineStyle: { color: themeColor('--app-primary-strong', '#409EFF'), width: 3 },
         showSymbol: false,
       }
     ]
@@ -182,6 +187,7 @@ function initCurveChart(data: AdminDashboard) {
   curveChartInstance = echarts.init(curveChartRef.value)
   const usernames = data.topUsers.map((item) => item.username)
   const option = {
+    textStyle: { color: themeColor('--app-text-regular', '#606266') },
     tooltip: { trigger: 'axis' },
     legend: {
       top: 0,
@@ -198,9 +204,9 @@ function initCurveChart(data: AdminDashboard) {
       type: 'value',
       name: '调用次数',
       minInterval: 1,
-      nameTextStyle: {
+        nameTextStyle: {
         align: 'right',
-        color: '#909399',
+        color: themeColor('--app-text-muted', '#909399'),
         fontWeight: 'bold',
         padding: [0, 8, 0, 0]
       }
@@ -246,13 +252,22 @@ function handleResize() {
   curveChartInstance?.resize()
 }
 
+function handleThemeChange() {
+  if (!dashboard.value) return
+  initPieChart(dashboard.value)
+  initLineChart(dashboard.value)
+  initCurveChart(dashboard.value)
+}
+
 onMounted(() => {
   void loadDashboard()
   window.addEventListener('resize', handleResize)
+  window.addEventListener('themechange', handleThemeChange)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('themechange', handleThemeChange)
   pieChartInstance?.dispose()
   lineChartInstance?.dispose()
   curveChartInstance?.dispose()
@@ -271,15 +286,15 @@ onBeforeUnmount(() => {
 
   /* 穿透修改 Element Plus 卡片样式，配置圆角、边框与纯白底色 */
   :deep(.el-card) {
-    background-color: #ffffff !important;
-    border: 1px solid #e4e7ed !important;
+    background-color: var(--app-surface) !important;
+    border: 1px solid var(--app-border) !important;
     border-radius: 8px !important;
     box-shadow: none !important;
   }
 
   /* 调整卡片 Header 边距 */
   :deep(.el-card__header) {
-    border-bottom: 1px solid #f2f6fc !important;
+    border-bottom: 1px solid var(--app-border-muted) !important;
     padding: 14px 16px !important;
   }
 
@@ -293,7 +308,7 @@ onBeforeUnmount(() => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: #909399;
+      color: var(--app-text-muted);
       font-size: 14px;
     }
 
@@ -301,14 +316,14 @@ onBeforeUnmount(() => {
       .value {
         font-size: 28px;
         font-weight: 600;
-        color: #303133;
+        color: var(--app-text);
         line-height: 1.2;
       }
 
       .sub-text {
         margin-top: 8px;
         font-size: 12px;
-        color: #909399;
+        color: var(--app-text-muted);
       }
     }
   }
@@ -320,7 +335,7 @@ onBeforeUnmount(() => {
   .chart-card {
     .chart-header {
       font-weight: 600;
-      color: #303133;
+      color: var(--app-text);
       font-size: 15px;
     }
 

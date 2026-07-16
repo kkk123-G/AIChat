@@ -122,7 +122,7 @@ const goToRegister = () => {
   box-sizing: border-box;
   overflow-x: hidden;
 
-  background-color: #fafafa;
+  background-color: var(--app-bg);
   background-image:
     linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
@@ -181,7 +181,7 @@ const goToRegister = () => {
 .login-container .logo-section .logo-title {
   font-size: 24px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text);
   margin: 0 0 6px;
   letter-spacing: 1px;
 }
@@ -197,8 +197,8 @@ const goToRegister = () => {
   box-sizing: border-box;
   padding: 40px 36px;
   text-align: center;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
   border-radius: 16px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
 }
@@ -207,7 +207,7 @@ const goToRegister = () => {
   margin: 0 0 8px;
   font-size: 22px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--app-text);
 }
 
 .login-container .login-card .card-subtitle {
@@ -220,12 +220,12 @@ const goToRegister = () => {
   padding: 0;
   margin-bottom: 6px;
   font-weight: 600;
-  color: #374151;
+  color: var(--app-text-regular);
 }
 
 .login-container .login-form :deep(.el-input__wrapper) {
   padding: 8px 12px;
-  background-color: #f3f4f6;
+  background-color: var(--app-surface-muted);
   border: 1px solid transparent;
   border-radius: 8px;
   box-shadow: none !important;
@@ -233,13 +233,13 @@ const goToRegister = () => {
 }
 
 .login-container .login-form :deep(.el-input__wrapper.is-focus) {
-  background-color: #ffffff;
-  border-color: #0ea5e9;
+  background-color: var(--app-surface);
+  border-color: var(--app-primary);
 }
 
 .login-container .login-form :deep(.el-input__inner) {
   height: 24px;
-  color: #1f2937;
+  color: var(--app-text);
 }
 
 .login-container .login-form .submit-item {
@@ -253,15 +253,15 @@ const goToRegister = () => {
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 2px;
-  background-color: #0d9488;
-  border-color: #0d9488;
+  background-color: var(--app-primary);
+  border-color: var(--app-primary);
   border-radius: 8px;
 }
 
 .login-container .login-form .submit-btn:hover,
 .login-container .login-form .submit-btn:focus {
-  background-color: #115e59;
-  border-color: #115e59;
+  background-color: var(--app-primary-strong);
+  border-color: var(--app-primary-strong);
 }
 
 .login-container .login-card .register-hint {
@@ -273,7 +273,7 @@ const goToRegister = () => {
 .login-container .login-card .register-link {
   margin-left: 4px;
   font-weight: 500;
-  color: #0d9488;
+  color: var(--app-primary-strong);
   cursor: pointer;
 }
 
@@ -291,7 +291,7 @@ const goToRegister = () => {
   .login-container .login-card {
     width: 92%;
     padding: 32px 24px;
-    background: #ffffff;
+    background: var(--app-surface);
     box-shadow: none;
   }
 
