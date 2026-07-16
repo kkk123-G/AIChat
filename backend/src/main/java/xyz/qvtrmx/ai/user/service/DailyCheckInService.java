@@ -54,7 +54,7 @@ public class DailyCheckInService {
     private void requireActiveUser(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null || user.getDeleted() == 1 || user.getStatus() != 1) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Account is unavailable");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "账号不可用");
         }
     }
 }

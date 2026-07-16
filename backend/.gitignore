@@ -2,17 +2,27 @@
 target/
 
 # Local Spring configuration. Commit only shared defaults and templates.
-src/main/resources/application-local.properties
-src/main/resources/application-local.yml
-src/main/resources/application-local.yaml
-src/main/resources/application-*.local.properties
-src/main/resources/application-*.local.yml
-src/main/resources/application-*.local.yaml
+src/main/resources/application-local.*
+src/main/resources/application-*.local.*
+src/main/resources/bootstrap-local.*
+src/main/resources/bootstrap-*.local.*
 
 # Local environment files. Commit only documented templates.
 .env
 .env.*
+.envrc
 !.env.example
+
+# Local credentials and private key material.
+secrets/
+credentials/
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
 
 # Logs and runtime data
 logs/

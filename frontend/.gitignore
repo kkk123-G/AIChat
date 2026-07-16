@@ -12,9 +12,21 @@ coverage/
 # Local environment files. Commit only documented templates.
 .env
 .env.*
+.envrc
 !.env.example
 !.env.development
 !.env.production
+
+# Local credentials and private key material.
+secrets/
+credentials/
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
 
 # Logs
 logs/

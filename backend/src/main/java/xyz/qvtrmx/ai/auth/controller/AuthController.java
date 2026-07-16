@@ -21,6 +21,7 @@ import xyz.qvtrmx.ai.auth.service.AuthService;
 import xyz.qvtrmx.ai.auth.vo.CurrentUserResponse;
 import xyz.qvtrmx.ai.auth.vo.TokenResponse;
 import xyz.qvtrmx.ai.common.api.ApiResponse;
+import xyz.qvtrmx.ai.common.audit.SensitiveOperation;
 import xyz.qvtrmx.ai.security.model.AuthenticatedUser;
 import xyz.qvtrmx.ai.security.service.MenuPermissionService;
 
@@ -44,18 +45,21 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @SensitiveOperation("REGISTER")
     public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         authService.register(request, httpRequest);
         return ResponseEntity.status(201).body(ApiResponse.ok(null));
     }
 
     @PostMapping("/login")
+    @SensitiveOperation("LOGIN")
     public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         AuthService.AuthTokens tokens = authService.login(request, httpRequest);
         return withRefreshCookie(tokens);
     }
 
     @PostMapping("/refresh")
+    @SensitiveOperation("TOKEN_REFRESH")
     public ResponseEntity<ApiResponse<TokenResponse>> refresh(@RequestBody(required = false) RefreshTokenRequest request,
                                                                HttpServletRequest httpRequest) {
         String refreshToken = request != null && request.refreshToken() != null
@@ -66,6 +70,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @SensitiveOperation("LOGOUT")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestBody(required = false) RefreshTokenRequest request,
                                                      HttpServletRequest httpRequest) {
         String refreshToken = request != null && request.refreshToken() != null

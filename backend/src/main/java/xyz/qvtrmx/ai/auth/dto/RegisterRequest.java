@@ -5,13 +5,13 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
-        @NotBlank(message = "Username is required")
-        @Pattern(regexp = "^[A-Za-z0-9_]{4,32}$", message = "Username must be 4-32 letters, numbers, or underscores")
+        @NotBlank(message = "用户名不能为空")
+        @Pattern(regexp = "^[A-Za-z0-9_]{4,32}$", message = "用户名必须由 4-32 位字母、数字或下划线组成")
         String username,
-        @NotBlank(message = "Password is required")
-        @Size(min = 8, max = 72, message = "Password must be 8-72 characters")
+        @NotBlank(message = "密码不能为空")
+        @Size(min = 8, max = 72, message = "密码长度必须为 8-72 个字符")
         String password,
-        @Size(max = 64, message = "Nickname must not exceed 64 characters")
+        @Size(max = 64, message = "昵称长度不能超过 64 个字符")
         String nickname
 ) {
 }

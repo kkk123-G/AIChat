@@ -87,7 +87,7 @@ public class UserBalanceService {
     ) {
         User user = userMapper.selectByIdForUpdate(userId);
         if (user == null || (requireEnabled && user.getStatus() != ENABLED_STATUS)) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "User was not found or is disabled");
+            throw new BusinessException(HttpStatus.NOT_FOUND, "用户不存在或已被禁用");
         }
 
         BigDecimal balanceBefore = user.getBalance();
@@ -113,17 +113,17 @@ public class UserBalanceService {
 
     private void validatePageArguments(long pageNumber, long pageSize) {
         if (pageNumber < 1) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Page number must be greater than zero");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "页码必须大于 0");
         }
         if (!ALLOWED_PAGE_SIZES.contains(pageSize)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Page size must be one of: 10, 20, 50");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "每页数量仅支持 10、20 或 50");
         }
     }
 
     private void requireActiveUser(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null || user.getDeleted() == 1 || user.getStatus() != ENABLED_STATUS) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Account is unavailable");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "账号不可用");
         }
     }
 

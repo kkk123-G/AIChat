@@ -100,7 +100,7 @@ public class ChatService {
                 .eq(Conversation::getDeleted, 0)
                 .set(Conversation::getDeleted, 1));
         if (affectedRows == 0) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "Conversation was not found");
+            throw new BusinessException(HttpStatus.NOT_FOUND, "会话不存在");
         }
     }
 
@@ -109,7 +109,7 @@ public class ChatService {
         requireActiveUser(user.id());
         Conversation conversation = conversationMapper.selectOwnedForUpdate(conversationId, user.id());
         if (conversation == null) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "Conversation was not found");
+            throw new BusinessException(HttpStatus.NOT_FOUND, "会话不存在");
         }
         int sequenceNo = nextSequenceNumber(conversationId);
         LocalDateTime now = LocalDateTime.now();
@@ -164,7 +164,7 @@ public class ChatService {
                 .doOnCancel(() -> finalizeTurn(turn, answer.toString(), finalized))
                 .onErrorResume(exception -> {
                     finalizeTurn(turn, answer.toString(), finalized);
-                    return Mono.just(ChatStreamEvent.error("The AI service is temporarily unavailable"));
+                    return Mono.just(ChatStreamEvent.error("AI 服务暂时不可用"));
                 });
     }
 
@@ -197,7 +197,7 @@ public class ChatService {
                 .eq(Conversation::getDeleted, 0)
                 .eq(Conversation::getStatus, ACTIVE_STATUS));
         if (conversation == null) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "Conversation was not found");
+            throw new BusinessException(HttpStatus.NOT_FOUND, "会话不存在");
         }
         return conversation;
     }
@@ -205,7 +205,7 @@ public class ChatService {
     private void requireActiveUser(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null || user.getDeleted() == 1 || user.getStatus() != ACTIVE_STATUS) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Account is unavailable");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "账号不可用");
         }
     }
 

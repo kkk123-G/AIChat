@@ -112,12 +112,12 @@ public class AdminUserService {
     public void updateUserStatus(Long userId, UpdateUserStatusRequest request, AuthenticatedUser operator) {
         requireAdministrator(operator);
         if (operator.id().equals(userId)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "You cannot change your own account status");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "不能修改自己的账号状态");
         }
 
         User user = userMapper.selectById(userId);
         if (user == null || user.getDeleted() == 1) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "User was not found");
+            throw new BusinessException(HttpStatus.NOT_FOUND, "用户不存在");
         }
         user.setStatus(request.enabled() ? ENABLED_STATUS : 0);
         userMapper.updateById(user);
@@ -125,16 +125,16 @@ public class AdminUserService {
 
     private void validatePageArguments(long pageNumber, long pageSize) {
         if (pageNumber < 1) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Page number must be greater than zero");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "页码必须大于 0");
         }
         if (!ALLOWED_PAGE_SIZES.contains(pageSize)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Page size must be one of: 10, 20, 50");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "每页数量仅支持 10、20 或 50");
         }
     }
 
     private void requireAdministrator(AuthenticatedUser operator) {
         if (operator == null || operator.role() != UserRole.ADMIN.code()) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "Administrator permission is required");
+            throw new BusinessException(HttpStatus.FORBIDDEN, "需要管理员权限");
         }
     }
 

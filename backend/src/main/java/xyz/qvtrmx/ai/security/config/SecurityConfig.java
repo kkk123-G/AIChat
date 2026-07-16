@@ -43,11 +43,11 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write("{\"success\":false,\"data\":null,\"message\":\"Authentication is required\"}");
+                    response.getWriter().write("{\"success\":false,\"data\":null,\"message\":\"请先登录\"}");
                 }).accessDeniedHandler((request, response, accessDeniedException) -> {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write("{\"success\":false,\"data\":null,\"message\":\"You do not have permission to perform this action\"}");
+                    response.getWriter().write("{\"success\":false,\"data\":null,\"message\":\"无权执行此操作\"}");
                 }))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

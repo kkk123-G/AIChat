@@ -52,10 +52,10 @@ public class UserProfileService {
     public void changePassword(AuthenticatedUser authenticatedUser, ChangePasswordRequest request) {
         User user = requireActiveUser(authenticatedUser.id());
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "当前密码错误");
         }
         if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "New password must be different from the current password");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "新密码不能与当前密码相同");
         }
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
@@ -65,7 +65,7 @@ public class UserProfileService {
     private User requireExistingUser(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null || user.getDeleted() == 1) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Account is unavailable");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "账号不可用");
         }
         return user;
     }
@@ -73,7 +73,7 @@ public class UserProfileService {
     private User requireActiveUser(Long userId) {
         User user = requireExistingUser(userId);
         if (user.getStatus() != ENABLED_STATUS) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Account is unavailable");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "账号不可用");
         }
         return user;
     }

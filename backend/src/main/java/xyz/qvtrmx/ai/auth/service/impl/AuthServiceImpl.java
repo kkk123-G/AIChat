@@ -75,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
     public void register(RegisterRequest request, HttpServletRequest httpRequest) {
         enforceRegistrationLimit(clientIp(httpRequest));
         if (userMapper.exists(new LambdaQueryWrapper<User>().eq(User::getUsername, request.username()))) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Username is already in use");
+            throw new BusinessException(HttpStatus.CONFLICT, "用户名已被占用");
         }
 
         User user = new User();
@@ -90,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             userMapper.insert(user);
         } catch (DuplicateKeyException exception) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Username is already in use");
+            throw new BusinessException(HttpStatus.CONFLICT, "用户名已被占用");
         }
     }
 
@@ -99,10 +99,10 @@ public class AuthServiceImpl implements AuthService {
     public AuthTokens login(LoginRequest request, HttpServletRequest httpRequest) {
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, request.username()));
         if (user == null || !passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "用户名或密码错误");
         }
         if (user.getStatus() != ENABLED_STATUS) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "Account is disabled");
+            throw new BusinessException(HttpStatus.FORBIDDEN, "账号已被禁用");
         }
         LocalDateTime now = LocalDateTime.now();
         user.setLastLoginAt(now);
@@ -116,11 +116,11 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthTokens refresh(String refreshToken, HttpServletRequest httpRequest) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Refresh token is required");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "刷新令牌不能为空");
         }
         String tokenId = tokenId(refreshToken);
         if (tokenId == null || Boolean.FALSE.equals(stringRedisTemplate.hasKey(refreshCacheKey(tokenId)))) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Refresh token is invalid or expired");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "刷新令牌无效或已过期");
         }
 
         String tokenHash = sha256(refreshToken);
@@ -129,7 +129,7 @@ public class AuthServiceImpl implements AuthService {
         );
         if (session == null || session.getRevokedAt() != null || session.getExpiresAt().isBefore(LocalDateTime.now())) {
             stringRedisTemplate.delete(refreshCacheKey(tokenId));
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Refresh token is invalid or expired");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "刷新令牌无效或已过期");
         }
 
         int revoked = refreshTokenSessionMapper.update(
@@ -140,13 +140,13 @@ public class AuthServiceImpl implements AuthService {
                         .set(RefreshTokenSession::getLastUsedAt, LocalDateTime.now())
         );
         if (revoked != 1) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Refresh token has already been used");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "刷新令牌已被使用");
         }
         stringRedisTemplate.delete(refreshCacheKey(tokenId));
 
         User user = userMapper.selectById(session.getUserId());
         if (user == null || user.getStatus() != ENABLED_STATUS || user.getDeleted() == 1) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Account is unavailable");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "账号不可用");
         }
         return issueTokens(user, session.getDeviceId(), httpRequest);
     }
@@ -193,7 +193,7 @@ public class AuthServiceImpl implements AuthService {
             stringRedisTemplate.expire(key, registerWindow);
         }
         if (count != null && count > registerLimit) {
-            throw new BusinessException(HttpStatus.TOO_MANY_REQUESTS, "Too many registration attempts, please try again later");
+            throw new BusinessException(HttpStatus.TOO_MANY_REQUESTS, "注册请求过于频繁，请稍后再试");
         }
     }
 

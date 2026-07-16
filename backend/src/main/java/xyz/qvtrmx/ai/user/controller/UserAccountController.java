@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.qvtrmx.ai.common.api.ApiResponse;
 import xyz.qvtrmx.ai.common.api.PageResponse;
+import xyz.qvtrmx.ai.common.audit.SensitiveOperation;
 import xyz.qvtrmx.ai.common.exception.BusinessException;
 import xyz.qvtrmx.ai.security.model.AuthenticatedUser;
 import xyz.qvtrmx.ai.user.entity.User;
@@ -50,7 +51,7 @@ public class UserAccountController {
     public ApiResponse<UserBalanceResponse> balance(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
         User user = userMapper.selectById(authenticatedUser.id());
         if (user == null || user.getDeleted() == 1 || user.getStatus() != 1) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Account is unavailable");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "账号不可用");
         }
         return ApiResponse.ok(new UserBalanceResponse(user.getBalance()));
     }
@@ -61,6 +62,7 @@ public class UserAccountController {
     }
 
     @PutMapping("/password")
+    @SensitiveOperation("PASSWORD_CHANGE")
     public ApiResponse<Void> changePassword(
             @Valid @RequestBody ChangePasswordRequest request,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser
@@ -86,6 +88,7 @@ public class UserAccountController {
     }
 
     @PostMapping("/check-in")
+    @SensitiveOperation("DAILY_CHECK_IN")
     public ApiResponse<Void> checkIn(@AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
         dailyCheckInService.checkIn(authenticatedUser.id());
         return ApiResponse.ok(null);

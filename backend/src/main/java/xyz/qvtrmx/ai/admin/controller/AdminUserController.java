@@ -19,6 +19,7 @@ import xyz.qvtrmx.ai.admin.vo.BalanceAdjustmentResponse;
 import xyz.qvtrmx.ai.admin.vo.RechargeUserResponse;
 import xyz.qvtrmx.ai.common.api.ApiResponse;
 import xyz.qvtrmx.ai.common.api.PageResponse;
+import xyz.qvtrmx.ai.common.audit.SensitiveOperation;
 import xyz.qvtrmx.ai.security.model.AuthenticatedUser;
 
 @RestController
@@ -41,6 +42,7 @@ public class AdminUserController {
     }
 
     @PostMapping("/{userId}/recharges")
+    @SensitiveOperation("ADMIN_RECHARGE")
     public ApiResponse<RechargeUserResponse> rechargeUser(
             @PathVariable Long userId,
             @Valid @RequestBody RechargeUserRequest request,
@@ -50,6 +52,7 @@ public class AdminUserController {
     }
 
     @PostMapping("/{userId}/refunds")
+    @SensitiveOperation("ADMIN_REFUND")
     public ApiResponse<BalanceAdjustmentResponse> refundUser(
             @PathVariable Long userId,
             @Valid @RequestBody RefundUserRequest request,
@@ -59,6 +62,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{userId}/status")
+    @SensitiveOperation("ACCOUNT_STATUS_CHANGE")
     public ApiResponse<Void> updateUserStatus(
             @PathVariable Long userId,
             @RequestBody UpdateUserStatusRequest request,
