@@ -15,7 +15,7 @@
    ./deploy.sh
    ```
 
-4. 在 `.env` 中替换全部 `replace_with_...` 占位值后，访问 `http://服务器IP:8080`。
+4. 在 `.env` 中替换全部 `replace_with_...` 占位值后，访问 `http://服务器IP:8080`。如通过外部 HTTPS 反向代理部署域名，设置 `CORS_ALLOWED_ORIGINS=https://你的域名`，不要带结尾斜杠。
 
 首次部署时保持 `ADMIN_BOOTSTRAP_ENABLED=true`，并填写三个 `INITIAL_ADMIN_*` 变量。`deploy.sh` 会等待后端首次启动完成，自动将该开关改为 `false`，然后重建后端容器。因此，之后的部署和重启都不会再启用管理员初始化。
 
@@ -45,4 +45,4 @@ docker compose up -d
 - 妥善保存 `.env`，其中包含数据库、Redis、JWT、OpenAI 和首次管理员凭据。
 - 使用高强度随机 `JWT_SECRET`，可通过 `openssl rand -base64 48` 生成。
 - MySQL 与 Redis 不应映射宿主机端口，用户只需要访问 `8080`。
-- 前端和 API 使用同源 `/api` 路径，不需要配置公开的后端地址或生产环境 CORS。
+- 前端和 API 使用同源 `/api` 路径。使用外部 HTTPS 反向代理时，应将该 HTTPS 域名设为 `CORS_ALLOWED_ORIGINS`。

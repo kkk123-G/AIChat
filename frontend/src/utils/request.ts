@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 
 import { clearAccessToken, getAccessToken, setAccessToken } from '@/utils/auth'
 import type { RequestConfig } from '@/utils/request-data'
-import { RequestError, type ApiResponse } from '@/utils/response-data'
+import { localizeErrorMessage, RequestError, type ApiResponse } from '@/utils/response-data'
 import type {} from '@/utils/request-data'
 
 const AUTH_REFRESH_PATH = '/auth/refresh'
@@ -32,7 +32,7 @@ client.interceptors.response.use(undefined, async (error: AxiosError<ApiResponse
 function unwrapResponse<T>(response: AxiosResponse<ApiResponse<T>>): T {
   const payload = response.data
   if (!payload.success) {
-    throw new RequestError(payload.message || 'Request failed', response.status)
+    throw new RequestError(localizeErrorMessage(payload.message) || '请求失败', response.status)
   }
   return payload.data
 }
@@ -52,7 +52,9 @@ async function handleResponseError(error: AxiosError<ApiResponse<unknown>>): Pro
     }
   }
 
-  const message = error.response?.data?.message || defaultErrorMessage(status)
+  const payload = error.response?.data
+  const serverMessage = typeof payload === 'string' ? payload : payload?.message
+  const message = localizeErrorMessage(serverMessage) || defaultErrorMessage(status)
   if (!config?.silent) {
     ElMessage.error(message)
   }
@@ -96,14 +98,14 @@ function handleSessionExpired() {
 }
 
 function defaultErrorMessage(status: number): string {
-  if (status === 400) return 'Request parameters are invalid'
-  if (status === 401) return 'Your session has expired, please sign in again'
+  if (status === 400) return '请求参数不正确'
+  if (status === 401) return '登录状态已过期，请重新登录'
   if (status === 402) return '余额不足'
-  if (status === 403) return 'You do not have permission to perform this action'
-  if (status === 404) return 'Requested resource was not found'
-  if (status === 429) return 'Too many requests, please try again later'
-  if (status >= 500) return 'The server is temporarily unavailable'
-  return 'Network request failed'
+  if (status === 403) return '无权执行此操作'
+  if (status === 404) return '请求资源不存在'
+  if (status === 429) return '请求过于频繁，请稍后再试'
+  if (status >= 500) return '服务器暂时不可用，请稍后再试'
+  return '网络请求失败，请检查网络连接'
 }
 
 const request = {

@@ -327,7 +327,7 @@ async function handleSend() {
       createdConversation = await chatApi.createConversation()
     }
     const conversationId = createdConversation?.id ?? session?.id
-    if (!conversationId) throw new Error('Unable to create a conversation')
+    if (!conversationId) throw new Error('创建会话失败')
 
     messageList.push(userMessage, assistantMessage)
     messagesAdded = true
@@ -356,12 +356,12 @@ async function handleSend() {
         finishGeneration(controller)
       }
       if (event.type === 'error') {
-        throw new Error(event.error || 'AI response failed')
+        throw new Error(event.error || 'AI 回复失败')
       }
     })
   } catch (error) {
     if (!(error instanceof DOMException && error.name === 'AbortError')) {
-      const message = error instanceof Error ? error.message : 'AI response failed'
+      const message = error instanceof Error ? error.message : 'AI 回复失败'
       ElMessage.error(message)
     }
     if (messagesAdded && !assistantMessage.content) {

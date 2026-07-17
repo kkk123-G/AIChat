@@ -62,7 +62,7 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-部署前必须在 `.env` 中填写所有 `replace_with_...` 占位值，尤其是 OpenAI 兼容接口地址、API Key、模型名、数据库密码、Redis 密码和高强度 JWT 密钥。
+部署前必须在 `.env` 中填写所有 `replace_with_...` 占位值，尤其是 OpenAI 兼容接口地址、API Key、模型名、数据库密码、Redis 密码和高强度 JWT 密钥。通过外部 HTTPS 反向代理部署域名时，还应设置 `CORS_ALLOWED_ORIGINS=https://你的域名`，不要带结尾斜杠。
 
 首次部署时，请设置 `ADMIN_BOOTSTRAP_ENABLED=true` 并填写 `INITIAL_ADMIN_*`。部署脚本会等待管理员初始化完成，自动把开关设为 `false` 并重建后端，因此后续启动无法再次初始化管理员。
 

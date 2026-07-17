@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 import type { MenuCode } from '@/utils/authorization'
 import { clearAccessToken, getAccessToken, setAccessToken } from '@/utils/auth'
-import { RequestError, type ApiResponse } from '@/utils/response-data'
+import { localizeErrorMessage, RequestError, type ApiResponse } from '@/utils/response-data'
 
 export interface LoginPayload {
   username: string
@@ -242,13 +242,13 @@ async function streamChatMessage(
   }
   if (response.status === 401) {
     handleStreamSessionExpired()
-    throw new RequestError('Your session has expired, please sign in again', response.status)
+    throw new RequestError('登录状态已过期，请重新登录', response.status)
   }
   if (!response.ok) {
     throw await toStreamRequestError(response)
   }
   if (!response.body) {
-    throw new RequestError('The server did not start a response stream', response.status)
+    throw new RequestError('服务端未返回响应流', response.status)
   }
 
   const reader = response.body.getReader()
@@ -296,9 +296,9 @@ async function refreshAccessTokenForStream() {
 async function toStreamRequestError(response: Response) {
   try {
     const payload = await response.json() as ApiResponse<unknown>
-    return new RequestError(payload.message || 'Unable to start the AI response', response.status)
+    return new RequestError(localizeErrorMessage(payload.message) || '无法发起 AI 回复', response.status)
   } catch {
-    return new RequestError('Unable to start the AI response', response.status)
+    return new RequestError('无法发起 AI 回复', response.status)
   }
 }
 
