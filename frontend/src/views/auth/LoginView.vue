@@ -53,6 +53,7 @@ const loading = ref(false)
 const formRef = ref<FormInstance>()
 const router = useRouter()
 const route = useRoute()
+const DEVICE_ID_STORAGE_KEY = 'ai-chat-browser-device-id'
 
 onMounted(() => {
   if (typeof route.query.username === 'string') {
@@ -85,7 +86,7 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
     const tokenData = await authApi.login({
       username: loginForm.account,
       password: loginForm.password,
-      deviceId: navigator.userAgent,
+      deviceId: getBrowserDeviceId(),
     })
     setAccessToken(tokenData.accessToken)
     let currentUser
@@ -104,6 +105,24 @@ const handleLogin = async (formEl: FormInstance | undefined) => {
 
 const goToRegister = () => {
   void router.push({ name: 'register' })
+}
+
+function getBrowserDeviceId() {
+  try {
+    const existingDeviceId = localStorage.getItem(DEVICE_ID_STORAGE_KEY)
+    if (existingDeviceId) return existingDeviceId
+
+    const deviceId = createDeviceId()
+    localStorage.setItem(DEVICE_ID_STORAGE_KEY, deviceId)
+    return deviceId
+  } catch {
+    return createDeviceId()
+  }
+}
+
+function createDeviceId() {
+  const value = globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+  return `browser-${value}`
 }
 </script>
 
