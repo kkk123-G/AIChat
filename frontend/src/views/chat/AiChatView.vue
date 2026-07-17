@@ -101,7 +101,7 @@
       <footer class="chat-footer" :class="{ 'is-draft': isDraftConversation }">
         <div class="input-wrapper">
           <el-input ref="chatInputRef" v-model="inputText" type="textarea" :autosize="{ minRows: 1, maxRows: 6 }"
-            resize="none" placeholder="输入消息，Enter 发送，Shift + Enter 换行" class="chat-input" :disabled="isGenerating"
+            resize="none" placeholder="有问题，尽管问" class="chat-input" :disabled="isGenerating"
             @keydown.enter.exact.prevent="handleSend" />
           <el-button v-if="!isGenerating" type="primary" circle class="send-btn" aria-label="发送消息"
             :disabled="!inputText.trim()" @click="handleSend">

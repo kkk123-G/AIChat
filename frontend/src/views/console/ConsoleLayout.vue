@@ -160,7 +160,7 @@
         </div>
       </header>
 
-      <main class="app-main">
+      <main class="app-main" :class="{ 'is-chat-page': activeMenu === 'ai-chat' }">
         <RouterView />
       </main>
     </div>
@@ -707,8 +707,9 @@ $navbar-height: 60px;
     gap: 20px;
 
     .check-in-button {
-      min-width: 72px;
+      min-width: 64px;
       height: 32px;
+      padding: 0 10px;
       border: 1px solid #bbf7d0;
       border-radius: 6px;
       background-color: #f0fdf4;
@@ -735,14 +736,14 @@ $navbar-height: 60px;
       align-items: center;
       background-color: #f0fdf4;
       border: 1px solid #bbf7d0;
-      padding: 6px 12px;
+      padding: 6px 10px;
       border-radius: 6px;
       color: #16a34a;
       font-weight: 600;
       font-size: 14px;
 
       .money-icon {
-        margin-right: 6px;
+        margin-right: 4px;
       }
     }
 
@@ -799,11 +800,24 @@ $navbar-height: 60px;
 }
 
 .is-mobile {
+  .app-main.is-chat-page {
+    padding: 0;
+  }
+
   .navbar {
     padding: 0 16px;
 
     .navbar-right {
       gap: 12px;
+
+      .check-in-button {
+        min-width: 60px;
+        padding: 0 8px;
+      }
+
+      .balance-box {
+        padding: 6px 8px;
+      }
     }
   }
 }
