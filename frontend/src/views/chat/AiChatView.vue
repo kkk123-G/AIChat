@@ -702,6 +702,10 @@ $accent: var(--app-primary);
   margin: 0 auto 24px;
   align-items: flex-start;
 
+  .avatar {
+    flex-shrink: 0;
+  }
+
   &.is-user {
     flex-direction: row-reverse;
 
@@ -723,6 +727,8 @@ $accent: var(--app-primary);
 }
 
 .message-bubble {
+  box-sizing: border-box;
+  min-width: 0;
   max-width: min(82%, 760px);
   border: 1px solid $border-color;
   border-radius: 8px;
@@ -876,6 +882,10 @@ $accent: var(--app-primary);
 
   .message-bubble {
     max-width: 84%;
+  }
+
+  .message-row.is-assistant .message-bubble {
+    max-width: 90%;
   }
 
   .chat-footer {
