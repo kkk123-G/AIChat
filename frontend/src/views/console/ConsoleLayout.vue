@@ -805,18 +805,63 @@ $navbar-height: 60px;
   }
 
   .navbar {
-    padding: 0 16px;
+    padding: 0 12px;
+
+    .navbar-left,
+    .navbar-right {
+      height: 32px;
+    }
+
+    .navbar-left {
+      .collapse-btn,
+      .breadcrumb-title {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        line-height: 1;
+      }
+
+      .collapse-btn {
+        margin-right: 8px;
+      }
+
+      .breadcrumb-title {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+    }
 
     .navbar-right {
-      gap: 12px;
+      gap: 8px;
+
+      .check-in-button,
+      .balance-box,
+      .user-avatar-wrapper {
+        box-sizing: border-box;
+        height: 100%;
+      }
+
+      .check-in-button,
+      .balance-box,
+      .user-avatar-wrapper,
+      .custom-user-dropdown {
+        display: flex;
+        align-items: center;
+      }
 
       .check-in-button {
-        min-width: 60px;
-        padding: 0 8px;
+        min-width: 52px;
+        padding: 0 6px;
+        justify-content: center;
+        line-height: 1;
       }
 
       .balance-box {
-        padding: 6px 8px;
+        padding: 6px 5px;
+
+        .money-icon {
+          margin-right: 2px;
+        }
       }
     }
   }

@@ -64,13 +64,13 @@
           </el-form-item>
 
           <el-form-item label="新密码" prop="newPassword" class="new-pwd-item">
-            <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="请输入新密码"
+            <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="至少 8 个字符"
               class="custom-input" />
-            <div class="form-hint">密码至少需要 8 个字符</div>
+            <!-- <div class="form-hint"></div> -->
           </el-form-item>
 
           <el-form-item label="确认新密码" prop="confirmPassword">
-            <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码"
+            <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="确认您的新密码"
               class="custom-input" />
           </el-form-item>
 
@@ -348,7 +348,7 @@ $text-secondary: var(--app-text-muted);
       }
 
       .new-pwd-item {
-        margin-bottom: 32px;
+        margin-bottom: 18px;
 
         .form-hint {
           font-size: 16px;
