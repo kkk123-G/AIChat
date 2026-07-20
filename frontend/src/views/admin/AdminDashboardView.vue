@@ -20,7 +20,7 @@
     </el-row>
 
     <el-row :gutter="16" class="chart-row">
-      <el-col :xs="24" :md="8" class="chart-col">
+      <el-col :xs="24" :md="10" class="chart-col">
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="chart-header">状态分布</div>
@@ -29,7 +29,7 @@
         </el-card>
       </el-col>
 
-      <el-col :xs="24" :md="16" class="chart-col">
+      <el-col :xs="24" :md="14" class="chart-col">
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="chart-header">调用次数趋势</div>
@@ -43,7 +43,7 @@
       <el-col :span="24">
         <el-card shadow="never" class="chart-card">
           <template #header>
-            <div class="chart-header">最近使用 (Top 5)</div>
+            <div class="chart-header">最近使用次数（Top5）</div>
           </template>
           <div ref="curveChartRef" class="chart-container"></div>
         </el-card>
@@ -202,14 +202,7 @@ function initCurveChart(data: AdminDashboard) {
     },
     yAxis: {
       type: 'value',
-      name: '调用次数',
       minInterval: 1,
-      nameTextStyle: {
-        align: 'right',
-        color: themeColor('--app-text-muted', '#909399'),
-        fontWeight: 'bold',
-        padding: [0, 8, 0, 0]
-      }
     },
     series: data.topUsers.map((item) => ({
       name: item.username,
